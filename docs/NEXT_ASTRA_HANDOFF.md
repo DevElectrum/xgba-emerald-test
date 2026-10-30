@@ -1,7 +1,7 @@
 # XGBA Emerald experiment: living Astra handoff
 
 Updated: 2026-10-30
-Status: E1 and E2 accepted; **E3 World 20 saved and restored successfully and roof regression repaired by user**. E4 independent flag/variable state bank is implemented on `xgba/e4-world-state` with dedicated CI; **E4 compiler/gameplay validation pending**.
+Status: E1/E2 accepted and E3 twenty-world persistence+roof repair accepted. **E4 20-world banked flag/var ROM compiles and verifies GREEN** in [Actions #41036086285](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41036086285); only E4 live gameplay tests and inherited standard/modern CI remain pending.
 
 ## Read this first
 
@@ -64,6 +64,14 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - Emulator fix in progress on `DevElectrum/xgba` branch `xgba/p1-fast-forward`: removes software and OpenGL renderer VSync and prioritizes the hold-Tab turbo key; verify CI and actual measured speed on Nyx before saying fixed.
 - Primary emulator handoff: https://github.com/DevElectrum/xgba/blob/xgba/p1-fast-forward/docs/NEXT_ASTRA_HANDOFF.md
 
+## E4 clean CI build passed (2026-10-30)
+
+- [Dedicated E4 Actions #41036086285](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41036086285) **SUCCEEDED**: generator, modified Emerald compiler/linker, 64 MiB E4 ROM pack/verify, exact original SaveBlock1 compile guard, and static event-bank presence check.
+- Linker memory report **SaveBlock1 = 15,752 bytes / 15,872 capacity (99.24%)**, identical to E3 and fully compatible with the existing save-sector footprint. SaveBlock2 = 3,884 and PokemonStorage = 33,744 unchanged. The 384-byte E4 bank occupies bytes previously labeled unused, not an added region. E4 uses no additional sectors.
+- The `xgba-emerald-e4.gba` output in CI was exactly **67,108,864 bytes**. Existing E3 packer verified all **16,760 relocated border/map assets** covering original, World Two, and 18 extra physical world payloads. No copyrighted ROM is committed or uploaded.
+- The alternate CI inherited `.github/workflows/build.yml` (normal plus MODERN compiler) was still running at time of this record. Verify that independently rather than claiming all jobs passed.
+- E4 **runtime test still required**: writer NPC at World20 cloned Littleroot x16,y12, auditor x18,y12, return scientist x14,y12. World20 count3/SET; switch to World3 count0/CLEAR then count1/SET; return World20 count3/SET; save/reload World20 and revisit World3. The saved E3 world location/ID can be copied to an E4 save file.
+- Dedicated draft E4 PR #5: https://github.com/DevElectrum/xgba-emerald-test/pull/5. Detailed user test steps: `docs/XGBA_E4_README.md`. Stay on experimental E4 branch, leave `DevElectrum/grand-anthology` untouched.
 ## E3 final visual acceptance and E4 start (2026-10-30)
 
 - User explicitly confirmed 'Kool fixed' after rebuilding the roof-preserving E3. The previous World 20 selector, save/quit/restart/reload and scientist number readback were also confirmed by user screenshots. Treat the E3 core geographic instance experiment and roof repair as accepted, while never claiming all 518 maps were visited.
@@ -76,7 +84,7 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - `make e4` generates E2 maps and E3 offset header, recompiles Emerald, and invokes unchanged E3 64 MiB packer with E4-specific output `xgba-emerald-e4.gba`; dedicated `.github/workflows/xgba-e4.yml` validates the compiler save-block assertions and expanded ROM. Docs: `docs/XGBA_E4_README.md`.
 - Intended user test: copy E3 save; in World 20 auditor reads 0/CLEAR, writer 3 times -> 3/SET; switch to World 3 -> 0/CLEAR, writer once -> 1/SET; return World 20 -> 3/SET; save/restart -> same; optionally revisit World 3 after reload -> 1/SET. **Do not claim completion until user confirms**.
 - E4 LIMITATION: this is 4 variables/48 flags per world, **not** isolation of all normal story flags, encounters or trainers. Full 20-world story history exceeds the current spare save space and requires expanded persistent backing storage with migration/checksums.
-- At time of this note the E4 CI build is still running: https://github.com/DevElectrum/xgba-emerald-test/actions/workflows/xgba-e4.yml . Inspect exact build errors and fix E4 branch only.
+- Dedicated E4 CI **passed**: https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41036086285 . E4 gameplay acceptance is still outstanding.
 ## E3 user-confirmed World 20 persistence and rooftop repair (2026-10-30)
 
 - **E3 core runtime milestone confirmed by user:** screenshot 1 shows the XGBA Test Town selector saying "Destination: WORLD 20!"; screenshot 2, taken after saving, exiting and relaunching XGBA, shows the cloned Littleroot return scientist saying "World 20 reporting in! Back to the lab!" User explicitly states everything else appears to work. This proves the world ID in SaveBlock1 persisted across a cold emulator restart and the duplicated Hoenn geometry loaded.
