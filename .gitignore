@@ -47,3 +47,5 @@ prefabs.json
 .porydaw/
 
 /data/maps/Xgba2_*/
+
+/include/xgba_world_e3_data.h
