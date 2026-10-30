@@ -1,7 +1,7 @@
 # XGBA Emerald experiment: living Astra handoff
 
 Updated: 2026-10-30
-Status: E1 fully accepted in user gameplay. **E2 static build, generated map-link checks, and 64 MiB expanded-ROM byte verification PASSED** in Actions #41027163879. E2 actual navigation and save/reload are still awaiting user gameplay verification.
+Status: E1 fully accepted. **E2 static CI PASSED and user has now confirmed successful in-game save, exit, restart and reload within Hoenn World Two**. Expanded map rendering at the restored position is supported by user's screenshot. Doorway and route-boundary isolation are not yet separately confirmed.
 
 ## Read this first
 
@@ -64,6 +64,13 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - Emulator fix in progress on `DevElectrum/xgba` branch `xgba/p1-fast-forward`: removes software and OpenGL renderer VSync and prioritizes the hold-Tab turbo key; verify CI and actual measured speed on Nyx before saying fixed.
 - Primary emulator handoff: https://github.com/DevElectrum/xgba/blob/xgba/p1-fast-forward/docs/NEXT_ASTRA_HANDOFF.md
 
+## E2 real-game save persistence proof (2026-10-30)
+
+- User posted an mGBA/XGBA screenshot showing a rendered outdoor World Two Hoenn town after saving, closing, restarting, and reloading, explicitly reporting **'spawned in hoenn 2 after save and restart'**.
+- **Confirmed by user**: World Two save-location identity persists across an emulator restart and the loaded town renders successfully. This is a crucial persistence milestone beyond E1's isolated test town. Screenshot is conversation evidence, not copied into the public repository.
+- **Previously confirmed by CI**: 518 cloned map definitions / 34 new map groups / 441 cloned layouts, 1,313 static warp entries / 148 route connections remapped, no unresolved destinations, 64 MiB packed image with relocated layout/border bytes (Actions run #41027163879).
+- **Still to verify explicitly**: moving through a World Two outdoor route boundary into another World Two map, entering and exiting a World Two house without accidentally returning to original Hoenn, and using the explicit return portal from World Two Littleroot. Do not infer these tests all passed solely from save/reload evidence.
+- E2 acceptance is **partial, with a major persistence gate passed**, pending confirmation of route/door routing. Do not claim separate per-world plot flags, encounter tables or trainer state: the current E2 maps intentionally share game-wide progress and suppress story events.
 ## E2 verified CI milestone (2026-10-30)
 
 - [GitHub Actions run 41027163879](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41027163879): SUCCESS, every workflow step passed. Generator produced **518 cloned maps, 34 new groups, 441 cloned layouts, 1,313 processed warp entries, 148 route connections and zero unresolved links**.
