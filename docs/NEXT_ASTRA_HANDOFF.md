@@ -64,6 +64,13 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - Emulator fix in progress on `DevElectrum/xgba` branch `xgba/p1-fast-forward`: removes software and OpenGL renderer VSync and prioritizes the hold-Tab turbo key; verify CI and actual measured speed on Nyx before saying fixed.
 - Primary emulator handoff: https://github.com/DevElectrum/xgba/blob/xgba/p1-fast-forward/docs/NEXT_ASTRA_HANDOFF.md
 
+## E3 marker failure on Nyx, corrective fix (2026-10-30)
+
+- User ran `make e3` on `xgba/e3-20-worlds`. **Emerald compilation/linking passed** (EWRAM 249,776 bytes, IWRAM 30,892 bytes). `tools/xgba_pack_e3.py pack` then raised `ValueError: World marker would overwrite a non-ground tile` inside `world_marker()` after assuming five fixed positions in cloned Littleroot had identical ground tiles.
+- Confirmed this is a **ROM packer marker assumption**, not XGBA emulator, linker, map tables or 64 MiB addressability. Earlier E3 pre-marker build passed CI #41029580141; subsequent marker-added CI runs failed.
+- **Corrective fix committed** to packer in `b8611d6472a3cb387937d1016e602f047ac5c675`: select five existing equal ground tiles near the center of Littleroot by scanning rows 12, 11, 10, 9, 8 (columns 6-12), then encode binary `world - 2` using matching upper 6-bit metatile attributes; no longer require a fixed five-tile strip to be uniform. README corrected in `f75425bf6dd9447c40d023b8f6e1724f2436fac2`.
+- The post-fix CI status must be checked before claiming successful 20-world marker build. See the latest runs of `.github/workflows/xgba-e3.yml`, including #41031616416 (fix) and #41031653299 (docs update). If further packer errors occur, inspect the exact line from logs and correct without compromising safety checks.
+- User should run `git pull --ff-only origin xgba/e3-20-worlds`, then `make e3` (if no output ROM from failed packer, no deletion needed). Use the user-reported emulator Qt frontend to test Worlds 3 and 20, separate geometry and save/reload.
 ## E3 successful CI evidence (2026-10-30)
 
 - Clean [GitHub Actions run #41029580141](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41029580141) **PASSED every step**: tools syntax, generator, Emerald compile, full 64 MiB pack, independent verify and 20-instance manifest assertions.
