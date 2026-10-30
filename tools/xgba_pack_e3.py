@@ -13,23 +13,39 @@ WORLD_LAST = 20
 
 
 
+def marker_cells(source):
+    """Select five safe matching-ground tiles near Littleroot's central path."""
+    off_tile = source[(12 * 20 + 9) * 2:(12 * 20 + 9) * 2 + 2]
+    positions = []
+    for y in (12, 11, 10, 9, 8):
+        for x in range(6, 13):
+            position = (y * 20 + x) * 2
+            if source[position:position + 2] == off_tile:
+                positions.append(position)
+                if len(positions) == 5:
+                    return positions
+    raise ValueError("Could not locate five unchanged matching-ground tiles for world marker")
+
+
 def world_marker(source, world):
-    """Encode World 3..20 in a five-tile marker on cloned Littleroot ground."""
+    """Encode World 3..20 using five original, identical-ground positions."""
     if len(source) != 20 * 20 * 2:
         raise ValueError("Unexpected cloned Littleroot dimensions")
+    if not 3 <= world <= 20:
+        raise ValueError(f"Invalid world for marker: {world}")
     result = bytearray(source)
     on_tile = source[(9 * 20 + 1) * 2:(9 * 20 + 1) * 2 + 2]
     off_tile = source[(12 * 20 + 9) * 2:(12 * 20 + 9) * 2 + 2]
     if on_tile == off_tile:
-        raise ValueError("World marker tiles must be visually different")
-    for bit in range(5):
-        position = (12 * 20 + 6 + bit) * 2
-        if source[position:position + 2] != off_tile:
-            raise ValueError("World marker would overwrite a non-ground tile")
+        raise ValueError("World marker tiles must be visibly different")
+    if (int.from_bytes(on_tile, "little") & 0xFC00) != (
+        int.from_bytes(off_tile, "little") & 0xFC00
+    ):
+        raise ValueError("World marker must preserve tile elevation and collision bits")
+
+    for bit, position in enumerate(marker_cells(source)):
         if (world - 2) & (1 << bit):
             result[position:position + 2] = on_tile
-        else:
-            result[position:position + 2] = off_tile
     return bytes(result)
 
 def plan(args):
