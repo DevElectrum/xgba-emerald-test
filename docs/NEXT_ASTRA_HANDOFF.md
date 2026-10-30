@@ -1,7 +1,7 @@
 # XGBA Emerald experiment: living Astra handoff
 
 Updated: 2026-10-30
-Status: E1 and E2 accepted. **E3 World 20 selector and save/restart/load confirmed by user with in-game screenshots (2026-10-30)**. User noticed missing tile in left house roof; E3 marker patch removed from ROM packer on `xgba/e3-20-worlds` to restore byte-exact Hoenn tiles. Await clean CI and user confirmation that repaired roof renders.
+Status: E1 and E2 accepted. **E3 World 20 selector and save/restart/load confirmed by user with in-game screenshots (2026-10-30)**. User noticed missing tile in left house roof; E3 marker patch removed from ROM packer on `xgba/e3-20-worlds` to restore byte-exact Hoenn tiles. **Tile-preserving E3 ROM build passed CI #41034692808**; still awaiting user to rebuild locally and confirm the repaired roof renders.
 
 ## Read this first
 
@@ -71,7 +71,7 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - **Root-cause fix on E3 branch:** commit `3990b93bdca256dc52ec79df9f6fea66cba3d818` removed the entire `marker_cells/world_marker` helper and the call mutating cloned Littleroot tiles in `tools/xgba_pack_e3.py`. Thus every one of Worlds 3-20 gets original border/map bytes unchanged, with distinct CPU pointers and physical ROM copies. `tools/xgba_pack_e3.py verify` checks exact bytes for all payloads.
 - Removed unused marker preflight from `Makefile` (`6a3a8c31`) and deleted `tools/xgba_test_e3_marker.py` (`88ad5d0a`). The active world remains observable through NPC dialogue in cloned Littleroot and the Test Town selector, without modifying map geometry.
 - IMPORTANT for user rebuilding: an E3 ROM is already present locally. **Do not delete `xgba-emerald-e3.sav`**. Close XGBA, execute `cd ~/Projects/xgba-emerald-test && git pull --ff-only origin xgba/e3-20-worlds && mv xgba-emerald-e3.gba xgba-emerald-e3-with-marker.gba && make e3`; the packer deliberately opens outputs in exclusive mode and will otherwise fail if ROM already exists. The save remains compatible because map IDs/world variable/save layout were not changed.
-- **Acceptance boundary:** user has proven World 20 persistent runtime operation; after rebuild, verify left house's roof looks correct in World 20. This roof fix must be backed by a fresh E3 CI success before marking fully resolved. No evidence yet that all 518 maps in all 20 instances have been individually traversed.
+- **Fresh ROM-integrity validation PASSED**: [E3 Actions #41034692808](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41034692808) confirms generated 64 MiB ROM, 20 worlds, 16,760 exact expanded-layout/border payloads and relocated World 20 end offset `0x0359F668`. This run includes the tile-preserving packer, removal of obsolete preflight, and unchanged E3 runtime. User roof appearance after rebuilding remains to be checked. No evidence that all 518 maps in all 20 instances have been individually traversed.
 - Branch `xgba/e3-20-worlds`, draft PR #4, derived from accepted E2. Keep `DevElectrum/grand-anthology` untouched.
 
 ## E3 marker fix validated in CI (2026-10-30)
