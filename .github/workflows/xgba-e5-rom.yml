@@ -1,0 +1,50 @@
+name: XGBA E5 game ROM marker and 1MiB save format
+
+on:
+  push:
+    branches:
+      - xgba/e5-expanded-save
+    paths-ignore:
+      - '**/*.md'
+      - AGENTS.md
+  pull_request:
+    branches:
+      - xgba/e4-world-state
+
+permissions:
+  contents: read
+
+jobs:
+  e5-game:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: pret/agbcc
+          path: agbcc
+      - name: Install Emerald toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi libpng-dev
+      - name: Build agbcc
+        working-directory: agbcc
+        run: |
+          ./build.sh
+          ./install.sh ../
+      - name: Build opt-in E5 ROM
+        run: make e5
+      - name: Check E5 marker, checksum and 64 MiB ROM
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          rom = Path("xgba-emerald-e5.gba").read_bytes()
+          assert len(rom) == 67108864
+          assert rom[0xB5:0xBC] == b"XGBA256"
+          assert rom[0xBC] == 0xE5
+          assert (sum(rom[0xA0:0xBD]) + rom[0xBD] + 0x19) & 0xFF == 0
+          print("E5 ROM tag, checksum and 64 MiB layout verified")
+          PY
+      - name: Validate E5 extended save records and failure recovery
+        run: python3 -m unittest discover -s tests -p 'test_xgba_e5_save.py' -v
