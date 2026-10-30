@@ -12,6 +12,26 @@ WORLD_FIRST = 3
 WORLD_LAST = 20
 
 
+
+def world_marker(source, world):
+    """Encode World 3..20 in a five-tile marker on cloned Littleroot ground."""
+    if len(source) != 20 * 20 * 2:
+        raise ValueError("Unexpected cloned Littleroot dimensions")
+    result = bytearray(source)
+    on_tile = source[(9 * 20 + 1) * 2:(9 * 20 + 1) * 2 + 2]
+    off_tile = source[(12 * 20 + 9) * 2:(12 * 20 + 9) * 2 + 2]
+    if on_tile == off_tile:
+        raise ValueError("World marker tiles must be visually different")
+    for bit in range(5):
+        position = (12 * 20 + 6 + bit) * 2
+        if source[position:position + 2] != off_tile:
+            raise ValueError("World marker would overwrite a non-ground tile")
+        if (world - 2) & (1 << bit):
+            result[position:position + 2] = on_tile
+        else:
+            result[position:position + 2] = off_tile
+    return bytes(result)
+
 def plan(args):
     prefix, existing, used = e2.plan(args)
     clones, positions, stride_used, end = generator.layout_plan()
@@ -30,6 +50,8 @@ def plan(args):
                 source = (generator.ROOT / layout[source_key]).read_bytes()
                 if source != expected:
                     raise ValueError(f"World {world} input changed: {layout['name']}")
+                if layout["name"] == "Xgba2_LittlerootTown_Layout" and source_key == "blockdata_filepath":
+                    source = world_marker(source, world)
                 payloads.append((base + relative, source))
     expected_count = len(existing) + (WORLD_LAST - WORLD_FIRST + 1) * 441 * 2
     if len(payloads) != expected_count:
