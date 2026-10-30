@@ -32,16 +32,16 @@ The E3 generator changes tracked `data/maps/map_groups.json` and `data/layouts/l
 1. From original Littleroot, use the original scientist to enter XGBA Test Town.
 2. In Test Town, the **new scientist at coordinates (18,12)** is the world selector. Talk repeatedly to cycle destination **World 2 → World 3 → ... → World 20 → World 2**. The dialogue reports the selected numeric world ID.
 3. The existing scientist at **(16,12)** now sends you to the selected world's Littleroot. If no destination was selected, it defaults to World 2.
-4. World 2 through 20 use a shared internal map network. In Worlds 3-20, inspect the five-tile marker on Littleroot's ground, encoding the selected world. Navigate to Route 101 or into houses; return normally. The scientist in cloned Littleroot at **(14,12)** reports the active world number and warps to Test Town without clearing the world selection.
-5. For a rigorous test, visit World 3, then World 20, save inside a World 20 interior, quit and relaunch the ROM. Verify that it loads the same world and the selector still reports World 20.
+4. World 2 through 20 use a shared internal map network with **unmodified Hoenn tiles**. Navigate to Route 101 or into houses; return normally. The scientist in cloned Littleroot at **(14,12)** reports the active world number and warps to Test Town without clearing the world selection. **There is no longer a ground-tile world-ID marker**, because it could damage building graphics.
+5. User has already confirmed World 20 loads after saving, quitting and relaunching, with the return scientist reporting WORLD 20. After the roof repair, confirm the left house roof is intact; optionally repeat save/reload and check World 3.
 6. Verify a normal Route 101/Oldale boundary in Worlds 3 and 20. Also check the menu-driven Qt XGBA interface and hold-Tab fast-forward.
 
 ## Major limits
 
 - The geometry is **physically duplicated** in ROM, but the world instances share the same object/event scripts, tilesets, wild encounter logic and persistent flags. Story isolation and per-world progression are **not** part of E3.
 - World 1 uses the ordinary Hoenn map network; Worlds 2 through 20 share E2's map IDs. Therefore checking only the map group/number cannot distinguish Worlds 3-20. Use the persistent world variable.
-- Each World 3-20 has a **5-position world ID marker** using matching ground tiles near Littleroot's central path (searched from row 12 upward, columns 6-12). The marker encodes `world_id - 2` in binary using original tile variants with matching elevation/collision bits; the positions are selected reproducibly from source rather than assuming an arbitrary strip is uniform. The rest of the geography remains a byte-for-byte copy.
+- **Worlds 3-20 contain byte-for-byte copies of the source layout and border data** at independent expanded-ROM offsets. A former cosmetic world marker modified five metatiles using only collision/elevation checks; the user saw a missing roof tile in World 20. That marker has been removed to preserve actual rooftop graphics. Confirm the active world through the scientist's world-number dialogue and the preserved world ID in the save.
 - Teleport, Fly, script-driven warps and respawn-to-heal-location may bypass the World Two route graph. They remain future tests.
-- E3 automated checks establish build and ROM bytes, **not gameplay success**. Do not mark E3 accepted before user tests the selector, world traversal, and save/reload.
+- E3's **World 20 selector and save/reload were confirmed by user screenshots**. The updated, tile-preserving E3 ROM must still be built and its roof appearance checked interactively.
 
 See the living handoff at docs/NEXT_ASTRA_HANDOFF.md and E3 Actions workflow `.github/workflows/xgba-e3.yml`.
