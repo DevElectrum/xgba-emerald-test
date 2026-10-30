@@ -1,7 +1,7 @@
 # XGBA Emerald experiment: living Astra handoff
 
 Updated: 2026-10-30
-Status: **E1/E2/E3 accepted; E4 independently persistent event-state prototype ACCEPTED in user-tested XGBA gameplay on 2026-10-30.** Both World 3 (1/SET) and World 20 (3/SET) survived a full in-game save and emulator restart. Full story, trainer, encounter, and PC box isolation is not yet implemented.
+Status: E1/E2/E3 accepted, E4 **fully accepted in real gameplay with independent World 3 and World 20 records surviving save/restart**. E5 experimental storage expansion STARTED on `xgba/e5-expanded-save` (game) and `xgba/e5-save-expansion` (emulator). Offline 1 MiB save format / CRC fallback tests and emulator baseline CI pass; E5 game runtime snapshot I/O and user testing NOT done.
 
 ## Read this first
 
@@ -63,6 +63,20 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - User explicitly requires fast-forward in XGBA. The prior SDL build was unsatisfactory because turbo was ineffective. This is a **mandatory acceptance gate for any future emulator build/recommendation**.
 - Emulator fix in progress on `DevElectrum/xgba` branch `xgba/p1-fast-forward`: removes software and OpenGL renderer VSync and prioritizes the hold-Tab turbo key; verify CI and actual measured speed on Nyx before saying fixed.
 - Primary emulator handoff: https://github.com/DevElectrum/xgba/blob/xgba/p1-fast-forward/docs/NEXT_ASTRA_HANDOFF.md
+
+## E5 start: audited save sectors and separate 1 MiB save backend (2026-10-30)
+
+**User told us to start E5 while they sleep. No user action/commands are needed yet. Do NOT promise background progress beyond what has actually been committed.**
+
+- **Important audit**: `src/save.c`, `include/save.h` show all 32 standard Emerald 4KiB flash sectors occupied: 0-13 main slot A, 14-27 main slot B, 28-29 Hall of Fame, 30 Trainer Hill, 31 Recorded Battle. None are spare. Do NOT repurpose native sectors or enlarge SaveBlock1 beyond the old `0x3D88` footprint.
+- **E5 game branch**: `DevElectrum/xgba-emerald-test` / `xgba/e5-expanded-save`, based on accepted E4. Draft [PR #6](https://github.com/DevElectrum/xgba-emerald-test/pull/6). `tools/xgba_e5_save.py` creates a separate E5 save from unchanged 128KiB native flash and optional 16-byte mGBA RTC trailer. It refuses to overwrite existing files and provides inspect/get/put/extract-native commands for offline experiments. `tests/test_xgba_e5_save.py` covers 20 worlds, 2-copy CRC fallback, both-copy corruption detection, native bytes/RTC preservation and maximum payload.
+- **Storage plan**: physical save size exactly 1MiB (optionally +16 bytes RTC at end): 0x00000..0x1FFFF untouched native save, 0x20000..0x20FFF primary header, 0x21000..0xE8FFF 20 worlds x two 20KiB slots, 0xE9000..0xFEFFF 88KiB reserved, 0xFF000..0xFFFFF backup header. Each record has 32-byte self-validating header and max 20,448-byte payload. Signatures `XGBAE5S\0` / `XGBAE5W\0`; CRC32 and monotonic sequence. Any corrupt active snapshot falls back to the older valid copy; both invalid report an error.
+- **ROM opt-in**: E5 branch adds `make e5`, invoking established E3 64MiB packer with `--e5-save`. ROM has same `XGBA256` extended-ROM header bytes `0xB5..0xBB`, revision byte `0xBC=0xE5` and recomputed GBA checksum `0xBD`. Output `xgba-emerald-e5.gba`, independent of old E4 and E3 ROMs. The E5 game currently retains E4 script/counter behavior; it does NOT yet access expanded history.
+- **E5 emulator branch**: `DevElectrum/xgba` / `xgba/e5-save-expansion`, based on accepted fast-forward branch `xgba/p1-fast-forward`. Draft [PR #4](https://github.com/DevElectrum/xgba/pull/4). For explicit E5-tagged ROMs **with initialized E5 save magic**, prototype maps 1MiB `.sav` (normal first128KiB flash + 896KiB appended) and exposes extension via CPU reads/writes to **0x0F000000..0x0F0DFFFF**. Original flash commands remain in 0x0E; out-of-range extension addresses ignored/return FF. Writes mark savedata dirty for normal mGBA sync. Legacy ROM and old E4 saves are never converted or overwritten implicitly.
+- **RTC gotcha discovered**: mGBA appends 16B clock metadata *after* normal flash bytes. Offline E5 migration handles native `0x20010` saves and generates `0x100010` files preserving RTC trailer at the end. Emulator `GBASavedataRTCRead/Write` offsets follow `GBASavedataSize`. Never naively copy old trailer into extension at 0x20000.
+- **CI passed**: [E5 offline format Actions #41041353375](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41041353375), including RTC migration cases, and [E5 emulator baseline compile/test Actions #41041284439](https://github.com/DevElectrum/xgba/actions/runs/41041284439). A dedicated E5 **game ROM build** workflow has been started, status must be checked: https://github.com/DevElectrum/xgba-emerald-test/actions/workflows/xgba-e5-rom.yml .
+- **Next**: Finish E5 ROM CI; implement a strictly guarded game-side E5 GBA-memory API and a simple read/write world-history test that cannot write to normal 0x0E Flash when emulator E5 extension is absent. Validate emulator direct persistence on a newly copied E5 save and ROM. Then design broader world state serialization, world transition lifecycle and recovery/rollback policy. Do not claim complete independent stories or accept E5 based on CI alone.
+- Full technical guide: `docs/XGBA_E5_README.md`. Preserve `DevElectrum/grand-anthology`, accepted E4 branch, existing E4 savestates and `.sav` files unchanged.
 
 ## E4 formal acceptance: two independent worlds survived save/restart (2026-10-30)
 
