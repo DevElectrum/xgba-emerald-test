@@ -64,6 +64,14 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - Emulator fix in progress on `DevElectrum/xgba` branch `xgba/p1-fast-forward`: removes software and OpenGL renderer VSync and prioritizes the hold-Tab turbo key; verify CI and actual measured speed on Nyx before saying fixed.
 - Primary emulator handoff: https://github.com/DevElectrum/xgba/blob/xgba/p1-fast-forward/docs/NEXT_ASTRA_HANDOFF.md
 
+## E1 user gameplay evidence (2026-10-30)
+
+- User uploaded an XGBA gameplay screenshot of the newly defined **XGBA TEST TOWN**, showing successfully rendered town tiles/buildings, a character by a house, and active custom NPC dialogue: **"You're in XGBA TEST TOWN! This map lives beyond 32 MB!"**
+- **Confirmed by screenshot**: gameplay reached the independently defined test map, visual rendering succeeded, and the new test-town witness NPC event/script/text executes.
+- **Corroborating static evidence**: [E1 build and integrity CI #41024989544](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41024989544) passed, showing the test town's tile layout is independently located at XGBA CPU `0x12001000` while Littleroot is at `0x12000000`.
+- **Still not specifically confirmed**: using the return scientist to reach original Littleroot again; walking/collision across town; in-game save, quit and load while physically inside the clone. Do not label E1 fully accepted until these are checked.
+- Screenshot is conversation evidence, not a file committed to the public repository.
+
 ## E1 implementation progress (2026-10-30)
 
 - New experimental branch `xgba/e1-independent-map`, based on E0; [draft E1 PR #2](https://github.com/DevElectrum/xgba-emerald-test/pull/2) targets `xgba/e0-expanded-layout`. Leave the fork's master and `DevElectrum/grand-anthology` untouched.
