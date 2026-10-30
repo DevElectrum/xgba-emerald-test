@@ -1,7 +1,7 @@
 # XGBA Emerald experiment: living Astra handoff
 
 Updated: 2026-10-30
-Status: **E0 static build and ROM-integrity checks PASSED** in [GitHub Actions #1](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41017521459). **Interactive XGBA gameplay has NOT been tested.**
+Status: **E0 static checks PASSED**, and user confirms **expanded Emerald runs in XGBA**. Working SDL Tab fast-forward and the Qt/menu-driven XGBA launch were separately confirmed by user. The full scripted warp/event/save/reload matrix is not explicitly confirmed. **Next milestone E1: a second independently selectable map with its own extended-ROM layout.**
 
 ## Read this first
 
@@ -64,11 +64,22 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - Emulator fix in progress on `DevElectrum/xgba` branch `xgba/p1-fast-forward`: removes software and OpenGL renderer VSync and prioritizes the hold-Tab turbo key; verify CI and actual measured speed on Nyx before saying fixed.
 - Primary emulator handoff: https://github.com/DevElectrum/xgba/blob/xgba/p1-fast-forward/docs/NEXT_ASTRA_HANDOFF.md
 
+## User-verified UI milestone and E1 design (2026-10-30)
+
+- The user confirmed **Tab fast-forward works** on the SDL XGBA P1 branch and then confirmed that the **Qt GUI build launches** after fixing the empty Git-tag CMake error. They wish to resume the ROM work. This is user-reported evidence of the GUI launch; do not assume every Qt menu or game feature has been exhaustively checked.
+- Emulator branch is `DevElectrum/xgba:xgba/p1-fast-forward`; see its own `docs/NEXT_ASTRA_HANDOFF.md`. The Qt CMake fix quotes an empty `RELEASE_TAGS` expansion.
+- In `data/maps/map_groups.json`, `gMapGroup_TownsAndRoutes` is first in `group_order`. In `data/layouts/layouts.json`, layout entries include source `map.bin` and `border.bin` and tileset pointers. To preserve map constants, append a new test map at the end of an existing group; append a separate layout at the end of the layout table.
+- **E1 goal:** preserve original Littleroot, introduce `XgbaTestTown` (or similar) with separate map ID/header/layout, and have an explicit reversible portal between the two. Simplest robust approach: add a dedicated map event/NPC script to enter the test map and an exit script to return. Do not repurpose a story-critical original warp. Avoid duplicating Littleroot story scripts/triggers into the test clone.
+- Place the clone's `map.bin` in an independently owned source path, and distinguish it visibly from the original using a safe tile or sign; adjust the packer to relocate **only the clone's** `MapLayout.map` pointer into an aligned expanded region (E0's relocation can stay or be retained as a regression check). Use ELF symbols and validate the pointer and relocated byte payload.
+- Critical acceptance: warp into the second map, verify distinct map identity, expected visual/layout difference, collision and NPC/script behavior; warp back to original, preserve normal story; test save/reload while standing in the clone. If the save file cannot restore the clone, investigate before scale-up.
+- Distinguish this from full **20 Hoenn worlds**: a 20-world implementation will eventually require a world/instance ID and instance-scoped flags/scripts/saves. E1 proves unique map IDs and navigation, not world isolation or expanded save RAM.
+- Keep large ROM files out of Git history, and run CI for every source/packer change. Keep `master` and Grand Anthology untouched.
+
 ## Immediate next three steps
 
-1. Recheck latest `xgba/e0-expanded-layout` branch and the newest CI run after any code change, and keep E0 PR draft.
-2. The user reports their local expanded ROM **works fine** in XGBA. Complete explicit warps/events/save/reload testing as needed; also **retest with XGBA's turbo-fix branch** and confirm hold-Tab fast-forward exceeds normal speed.
-3. After manual E0 proof, implement a second independently addressable test map and a warp between original and clone. Do not start 20 Hoenns or PC expansion before this gate.
+1. Create `xgba/e1-independent-map` based on E0 branch and implement a separately indexed test map plus a non-story-critical portal/return route. Keep E0 draft PR open.
+2. Extend `tools/xgba_pack_emerald.py` and CI to relocate and verify **both** original Littleroot and the test clone's independent map payload(s), including a visibly distinct marker, precise address alignment, checksum and byte-range assertions.
+3. Build a local expanded E1 ROM on Nyx, interactively walk through portal, validate collision/scripts, return, save/reload, and check normal Qt/Tab turbo. Record exact results in this handoff. Only after this gate, plan mass cloning, per-world identity, and separate Pokémon storage engineering.
 
 ## E0 work and tests
 
