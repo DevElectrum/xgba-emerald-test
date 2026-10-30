@@ -64,6 +64,17 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - Emulator fix in progress on `DevElectrum/xgba` branch `xgba/p1-fast-forward`: removes software and OpenGL renderer VSync and prioritizes the hold-Tab turbo key; verify CI and actual measured speed on Nyx before saying fixed.
 - Primary emulator handoff: https://github.com/DevElectrum/xgba/blob/xgba/p1-fast-forward/docs/NEXT_ASTRA_HANDOFF.md
 
+## E1 implementation progress (2026-10-30)
+
+- New experimental branch `xgba/e1-independent-map`, based on E0; [draft E1 PR #2](https://github.com/DevElectrum/xgba-emerald-test/pull/2) targets `xgba/e0-expanded-layout`. Leave the fork's master and `DevElectrum/grand-anthology` untouched.
+- E1 **source compilation was already confirmed** by GitHub Actions #41024607901, but that run's packer phase **failed** due an overly strict assumption about adjacent ground tiles. Fixed in commit `e99c2536c4dc44623748e359767931f347954257`; inspect the latest E1 workflow before claiming full pass.
+- Added `data/maps/XgbaTestTown/map.json`, `scripts.inc`, and separate copies of source `data/layouts/XgbaTestTown/map.bin` and `border.bin`. Updated map group list and layout table, preserving all original IDs by appending at the end of their existing group and table.
+- New Littleroot scientist at map `(14,12)` warps to `MAP_XGBA_TEST_TOWN` at `(13,12)`. The test town has return scientist at `(14,12)`, witness NPC at `(3,12)`, no house-story warps or Route101 connection, and a minimal mapscript.
+- `tools/xgba_pack_e1.py` builds `xgba-emerald-e1.gba` at exactly 64 MiB; first map layout is relocated to `0x12000000` and the clone layout to `0x12001000`. The clone's **output tile layout** gets a small three-tile variant so the contents are different while source binaries remain separately managed.
+- `.github/workflows/xgba-e1.yml` compiles and runs static pack/verify steps. The inherited upstream workflow on E1 uses `COMPARE=0` intentionally because an edited game is **not** bit-for-bit vanilla. Generated ROMs remain ignored.
+- Local build and manual test instructions: [docs/XGBA_E1_README.md](https://github.com/DevElectrum/xgba-emerald-test/blob/xgba/e1-independent-map/docs/XGBA_E1_README.md).
+- **Unverified until user performs E1 manual test**: bidirectional portals, distinct tile marker, save/reload while standing in clone, collision and NPC events. Preserve an existing save backup; never overwrite the user's important project ROM.
+
 ## User-verified UI milestone and E1 design (2026-10-30)
 
 - The user confirmed **Tab fast-forward works** on the SDL XGBA P1 branch and then confirmed that the **Qt GUI build launches** after fixing the empty Git-tag CMake error. They wish to resume the ROM work. This is user-reported evidence of the GUI launch; do not assume every Qt menu or game feature has been exhaustively checked.
