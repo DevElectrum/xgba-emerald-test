@@ -40,7 +40,7 @@ The E3 generator changes tracked `data/maps/map_groups.json` and `data/layouts/l
 
 - The geometry is **physically duplicated** in ROM, but the world instances share the same object/event scripts, tilesets, wild encounter logic and persistent flags. Story isolation and per-world progression are **not** part of E3.
 - World 1 uses the ordinary Hoenn map network; Worlds 2 through 20 share E2's map IDs. Therefore checking only the map group/number cannot distinguish Worlds 3-20. Use the persistent world variable.
-- Each World 3-20 has a **5-tile world ID marker** on cloned Littleroot's ground (row 12, columns 6-10). The marker encodes `world_id - 2` in binary using valid original ground/decorative tiles. This helps verify the runtime selected a distinct physical geometry block. The rest of the geography remains a byte-for-byte copy.
+- Each World 3-20 has a **5-position world ID marker** using matching ground tiles near Littleroot's central path (searched from row 12 upward, columns 6-12). The marker encodes `world_id - 2` in binary using original tile variants with matching elevation/collision bits; the positions are selected reproducibly from source rather than assuming an arbitrary strip is uniform. The rest of the geography remains a byte-for-byte copy.
 - Teleport, Fly, script-driven warps and respawn-to-heal-location may bypass the World Two route graph. They remain future tests.
 - E3 automated checks establish build and ROM bytes, **not gameplay success**. Do not mark E3 accepted before user tests the selector, world traversal, and save/reload.
 
