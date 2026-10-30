@@ -1,7 +1,7 @@
 # XGBA Emerald experiment: living Astra handoff
 
 Updated: 2026-10-30
-Status: E1/E2 accepted and E3 twenty-world persistence+roof repair accepted. **E4 20-world banked flag/var ROM compiles and verifies GREEN** in [Actions #41036086285](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41036086285); only E4 live gameplay tests remain pending; inherited standard/modern compiler CI also passed in Actions #41036331293.
+Status: E1/E2/E3 accepted. **E4 independent world-local event bank plus World 20 cold-restart save/reload have been confirmed in real gameplay**. World 3 independent state confirmed before restart; optional check of World 3 following reload remains. Full story/PC/trainer isolation is not yet implemented.
 
 ## Read this first
 
@@ -69,7 +69,7 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - User successfully built `xgba-emerald-e4.gba` on Nyx with `make e4`: exact 64 MiB ROM, 20 geography instances and 16,760 verified expanded-ROM payloads. E4 save copied separately from E3 (`xgba-emerald-e4.sav`).
 - **User confirmed in real XGBA gameplay**: in World 20 auditor initially showed progress **0**, flag **CLEAR**; after talking to writer three times, auditor showed progress **3**, flag **SET**.
 - After switching to World 3, auditor showed **0 / CLEAR**. Writer once, then auditor showed **1 / SET**. After switching *back* to World 20, auditor still reported **progress 3**. Hence world-local variable+flag writes/readback and different counters survive round-trip world switching. World 20 flag after this last return has not been separately reconfirmed in the user's newest message.
-- **Next required test is E4 cold-restart save persistence**: user currently in World 20; save using in-game menu, completely exit XGBA, relaunch same E4 ROM and .sav, check World 20 audit NPC remains **3 / SET**. Then optionally travel to World 3 and confirm **1 / SET** after reload. Until then, do NOT describe E4 save/restart persistence as user accepted.
+- **E4 cold-restart save persistence CONFIRMED by user**: After normal in-game save, complete XGBA exit, ROM restart and reload, World 20 auditor reported **progress 3 / flag SET**, exactly matching its independently stored pre-restart event state. This validates E4's world-local event var+flag storage and save compatibility in a real loaded game. World 3 was verified 1/SET before the restart; **World 3 after the same restart is not yet tested**. Optional final confirmation: travel to World 3 and verify 1/SET after reload. Do not claim all story variables or trainers are isolated.
 - No terminal commands needed for this phase. The user requested step-by-step gameplay instructions rather than multiple technical commands at once.
 
 ## E4 clean CI build passed (2026-10-30)
