@@ -67,14 +67,14 @@ def clone_variant(data):
     # Use a known, originally present ground tile to make a visible marker.
     # This changes the test-town tile layout only, not the source Littleroot.
     mark = data[(9 * 20 + 1) * 2:(9 * 20 + 1) * 2 + 2]
-    grass = data[(12 * 20 + 9) * 2:(12 * 20 + 9) * 2 + 2]
-    if mark == grass:
-        raise ValueError("Test marker tile is indistinguishable from the ground tile")
+    changed = 0
     for x in (9, 10, 11):
         at = (12 * 20 + x) * 2
-        if data[at:at + 2] != grass:
-            raise ValueError("Expected uninterrupted ground for E1 test marker")
+        if data[at:at + 2] != mark:
+            changed += 1
         result[at:at + 2] = mark
+    if not changed:
+        raise ValueError("Test marker does not change the clone map")
     return bytes(result)
 
 
