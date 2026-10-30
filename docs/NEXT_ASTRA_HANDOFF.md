@@ -1,7 +1,7 @@
 # XGBA Emerald experiment: living Astra handoff
 
 Updated: 2026-10-30
-Status: E1 and E2 core tests accepted by user. **E3 20-world ROM construction PASSED** on [GitHub Actions #41029580141](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41029580141). Gameplay in Worlds 3-20, selector, and save/reload are NOT yet confirmed.
+Status: E1 and E2 accepted. **E3 World 20 selector and save/restart/load confirmed by user with in-game screenshots (2026-10-30)**. User noticed missing tile in left house roof; E3 marker patch removed from ROM packer on `xgba/e3-20-worlds` to restore byte-exact Hoenn tiles. Await clean CI and user confirmation that repaired roof renders.
 
 ## Read this first
 
@@ -63,6 +63,16 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - User explicitly requires fast-forward in XGBA. The prior SDL build was unsatisfactory because turbo was ineffective. This is a **mandatory acceptance gate for any future emulator build/recommendation**.
 - Emulator fix in progress on `DevElectrum/xgba` branch `xgba/p1-fast-forward`: removes software and OpenGL renderer VSync and prioritizes the hold-Tab turbo key; verify CI and actual measured speed on Nyx before saying fixed.
 - Primary emulator handoff: https://github.com/DevElectrum/xgba/blob/xgba/p1-fast-forward/docs/NEXT_ASTRA_HANDOFF.md
+
+## E3 user-confirmed World 20 persistence and rooftop repair (2026-10-30)
+
+- **E3 core runtime milestone confirmed by user:** screenshot 1 shows the XGBA Test Town selector saying "Destination: WORLD 20!"; screenshot 2, taken after saving, exiting and relaunching XGBA, shows the cloned Littleroot return scientist saying "World 20 reporting in! Back to the lab!" User explicitly states everything else appears to work. This proves the world ID in SaveBlock1 persisted across a cold emulator restart and the duplicated Hoenn geometry loaded.
+- **Visual regression reported:** screenshot 2 has a missing tile on the roof of the house on the left. E3's cosmetic 5-bit world marker was overwriting full metatile indices near central Littleroot and previously only checked the high collision/elevation bits (`0xFC00`); preserving those attributes does NOT ensure a roof tile remains a roof. World 20 exposes the corruption.
+- **Root-cause fix on E3 branch:** commit `3990b93bdca256dc52ec79df9f6fea66cba3d818` removed the entire `marker_cells/world_marker` helper and the call mutating cloned Littleroot tiles in `tools/xgba_pack_e3.py`. Thus every one of Worlds 3-20 gets original border/map bytes unchanged, with distinct CPU pointers and physical ROM copies. `tools/xgba_pack_e3.py verify` checks exact bytes for all payloads.
+- Removed unused marker preflight from `Makefile` (`6a3a8c31`) and deleted `tools/xgba_test_e3_marker.py` (`88ad5d0a`). The active world remains observable through NPC dialogue in cloned Littleroot and the Test Town selector, without modifying map geometry.
+- IMPORTANT for user rebuilding: an E3 ROM is already present locally. **Do not delete `xgba-emerald-e3.sav`**. Close XGBA, execute `cd ~/Projects/xgba-emerald-test && git pull --ff-only origin xgba/e3-20-worlds && mv xgba-emerald-e3.gba xgba-emerald-e3-with-marker.gba && make e3`; the packer deliberately opens outputs in exclusive mode and will otherwise fail if ROM already exists. The save remains compatible because map IDs/world variable/save layout were not changed.
+- **Acceptance boundary:** user has proven World 20 persistent runtime operation; after rebuild, verify left house's roof looks correct in World 20. This roof fix must be backed by a fresh E3 CI success before marking fully resolved. No evidence yet that all 518 maps in all 20 instances have been individually traversed.
+- Branch `xgba/e3-20-worlds`, draft PR #4, derived from accepted E2. Keep `DevElectrum/grand-anthology` untouched.
 
 ## E3 marker fix validated in CI (2026-10-30)
 
