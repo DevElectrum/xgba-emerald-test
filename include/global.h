@@ -1098,6 +1098,8 @@ struct SaveBlock1
     // sizeof: 0x3D88
 };
 
+typedef char XgbaE4SaveBlockPreservesEmeraldFormat[(sizeof(struct SaveBlock1) == 0x3D88) ? 1 : -1];
+
 extern struct SaveBlock1 *gSaveBlock1Ptr;
 
 struct MapPosition
