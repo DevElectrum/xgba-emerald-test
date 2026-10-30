@@ -25,7 +25,7 @@ E5 separates old, accepted game data from expanded world history:
 | 00000-1FFFF | 128 KiB | Original byte-for-byte Emerald save |
 | 20000-20FFF | 4 KiB | E5 primary superblock (magic, version, sizes, CRC) |
 | 21000-E8FFF | 800 KiB | Twenty independent worlds, two 20 KiB slots per world |
-| E9000-FEFFF | 92 KiB | Reserved future expansion / recovery space |
+| E9000-FEFFF | 88 KiB | Reserved future expansion / recovery space |
 | FF000-FFFFF | 4 KiB | E5 duplicate superblock |
 | 100000-10000F | optional 16 B | mGBA RTC trailer, retained in its proper new location |
 
