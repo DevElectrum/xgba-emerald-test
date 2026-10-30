@@ -1,7 +1,7 @@
 # XGBA Emerald experiment: living Astra handoff
 
 Updated: 2026-10-30
-Status: **E1 ACCEPTED by user gameplay test (2026-10-30)**. Both map layouts and custom NPC scripts work; user confirms return portal and save/quit/reopen/load in the independently addressed XGBA Test Town. CI 41024989544 and 41024989681 passed. Next: E2 duplicate the Hoenn map network in an isolated new branch, with its own world-identity design.
+Status: E1 accepted in user gameplay. E2 independent second-Hoenn network is implemented on xgba/e2-hoenn-network and undergoing automated validation; not yet accepted in gameplay.
 
 ## Read this first
 
@@ -64,6 +64,25 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - Emulator fix in progress on `DevElectrum/xgba` branch `xgba/p1-fast-forward`: removes software and OpenGL renderer VSync and prioritizes the hold-Tab turbo key; verify CI and actual measured speed on Nyx before saying fixed.
 - Primary emulator handoff: https://github.com/DevElectrum/xgba/blob/xgba/p1-fast-forward/docs/NEXT_ASTRA_HANDOFF.md
 
+## E2 second-Hoenn implementation underway (2026-10-30)
+
+- Branch: xgba/e2-hoenn-network based on accepted E1 branch xgba/e1-independent-map. Never modify Grand Anthology or master for this work.
+- tools/xgba_generate_e2.py derives a second map network from original source JSON, appending 34 map groups and 441 layout descriptors and generating map JSON under ignored data/maps/Xgba2_*/ directories. All ordinary connection and warp destinations within original Hoenn are rewritten to cloned IDs. Unexpected unmapped links fail fast; special MAP_UNDEFINED/MAP_DYNAMIC are preserved as exceptions.
+- World Two maps use a shared neutral map script, no NPC story objects/coordinate scripts, preserving geometry and standard door/route transitions only. User should not assume script-triggered transitions, wild encounters, story or independent progression are implemented.
+- Portal chain: Original Littleroot scientist (14,12) -> E1 Test Town, second Test Town scientist (16,12) -> E2 Littleroot (13,12), E2 return scientist (14,12) -> E1 Test Town (15,12).
+- tools/xgba_pack_e2.py builds 64 MiB tagged XGBA ROM, relocates E1 pair plus 441 cloned map and border asset pairs to 0x12002000 onwards, verifies ELF pointers and byte payloads. Intended target: xgba-emerald-e2.gba.
+- Makefile adds make e2 (generate -> compile -> pack -> verify). CI workflow .github/workflows/xgba-e2.yml and user guide docs/XGBA_E2_README.md added.
+- Generation deliberately modifies tracked data/maps/map_groups.json and data/layouts/layouts.json in **local** working tree. Do not commit generated groups/layouts/map files; README explains restoring tracked files after building. Ignore generated map folders; output ROM must never be uploaded or committed.
+- Important architecture: groups 34 original +34 E2 =68 (<256). Native group ID is 8-bit; twenty Hoenn copies will not fit 680 groups. Later add explicit world ID and map router.
+- Status at creation of this handoff entry: E2 fresh CI compile still running; **do not claim E2 build or gameplay passed** without CI result and user's manual portal/warp/save tests.
+- Build CI: https://github.com/DevElectrum/xgba-emerald-test/actions/workflows/xgba-e2.yml . User run instructions: https://github.com/DevElectrum/xgba-emerald-test/blob/xgba/e2-hoenn-network/docs/XGBA_E2_README.md
+
+### Current E2 acceptance checklist
+
+1. Generate all E2 maps without any unresolved map links; compile a normal Emerald executable under 32 MiB, link cloned maps and pointers.
+2. Build and statically verify exactly 64 MiB E2 ROM with 441 relocated map layouts and borders, plus E1 payloads.
+3. User navigates Test Town portal to World Two Littleroot, north to World Two Route101 and Oldale, enters/exits a house, returns through portal and saves/reloads in World Two.
+4. If any step fails, fix E2 branch only, rerun CI and update this handoff, keeping accepted E1 intact.
 ## E1 final acceptance: user confirmed (2026-10-30)
 
 **All critical E1 gates are confirmed complete.** After the screenshot established new map rendering and custom witness NPC dialogue, user explicitly confirmed:
