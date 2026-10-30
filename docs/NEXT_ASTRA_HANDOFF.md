@@ -1,7 +1,7 @@
 # XGBA Emerald experiment: living Astra handoff
 
 Updated: 2026-10-30
-Status: **E0 static checks PASSED**, and user confirms **expanded Emerald runs in XGBA**. Working SDL Tab fast-forward and the Qt/menu-driven XGBA launch were separately confirmed by user. The full scripted warp/event/save/reload matrix is not explicitly confirmed. **Next milestone E1: a second independently selectable map with its own extended-ROM layout.**
+Status: **E1 ACCEPTED by user gameplay test (2026-10-30)**. Both map layouts and custom NPC scripts work; user confirms return portal and save/quit/reopen/load in the independently addressed XGBA Test Town. CI 41024989544 and 41024989681 passed. Next: E2 duplicate the Hoenn map network in an isolated new branch, with its own world-identity design.
 
 ## Read this first
 
@@ -63,6 +63,38 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - User explicitly requires fast-forward in XGBA. The prior SDL build was unsatisfactory because turbo was ineffective. This is a **mandatory acceptance gate for any future emulator build/recommendation**.
 - Emulator fix in progress on `DevElectrum/xgba` branch `xgba/p1-fast-forward`: removes software and OpenGL renderer VSync and prioritizes the hold-Tab turbo key; verify CI and actual measured speed on Nyx before saying fixed.
 - Primary emulator handoff: https://github.com/DevElectrum/xgba/blob/xgba/p1-fast-forward/docs/NEXT_ASTRA_HANDOFF.md
+
+## E1 final acceptance: user confirmed (2026-10-30)
+
+**All critical E1 gates are confirmed complete.** After the screenshot established new map rendering and custom witness NPC dialogue, user explicitly confirmed:
+1. The return scientist takes the player from `XgbaTestTown` back to original Littleroot.
+2. The player can return to `XgbaTestTown`, use in-game save, close XGBA, relaunch the 64 MiB E1 ROM and load into the cloned town successfully.
+
+This validates independently defined Emerald map IDs, distinct layouts at XGBA CPU addresses `0x12000000` and `0x12001000` (already statically verified in CI), bidirectional map navigation, and location persistence on save/load. **It does not yet establish independent per-world flags/trainer progress, 20 Hoenn copies or expanded PC save capacity.**
+
+- Completed experiment: `xgba/e1-independent-map`, [draft PR #2](https://github.com/DevElectrum/xgba-emerald-test/pull/2).
+- CI: [E1 ROM-integrity pass](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41024989544) and [source-build pass](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41024989681).
+- Next E2: **do not modify Grand Anthology**; create a new isolated `xgba/e2-hoenn-network` branch based on accepted E1. Avoid naively duplicating all maps in the first group if it would push individual map indices past 255. Investigate generator, map groups and warp/connection routing; preserve original story/route network. Define instance identity separately from map group and map number for eventual 20-world scaling.
+- Preserve E1 as working baseline, and maintain this living handoff at every major implementation/test milestone.
+
+## E1 user gameplay evidence (2026-10-30)
+
+- User uploaded an XGBA gameplay screenshot of the newly defined **XGBA TEST TOWN**, showing successfully rendered town tiles/buildings, a character by a house, and active custom NPC dialogue: **"You're in XGBA TEST TOWN! This map lives beyond 32 MB!"**
+- **Confirmed by screenshot**: gameplay reached the independently defined test map, visual rendering succeeded, and the new test-town witness NPC event/script/text executes.
+- **Corroborating static evidence**: [E1 build and integrity CI #41024989544](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41024989544) passed, showing the test town's tile layout is independently located at XGBA CPU `0x12001000` while Littleroot is at `0x12000000`.
+- **Subsequently user-confirmed**: return scientist works and in-game save/relaunch/load while in the cloned town works. E1 acceptance is complete; exact collision coverage is not exhaustive.
+- Screenshot is conversation evidence, not a file committed to the public repository.
+
+## E1 implementation progress (2026-10-30)
+
+- New experimental branch `xgba/e1-independent-map`, based on E0; [draft E1 PR #2](https://github.com/DevElectrum/xgba-emerald-test/pull/2) targets `xgba/e0-expanded-layout`. Leave the fork's master and `DevElectrum/grand-anthology` untouched.
+- E1 **full static build and ROM-integrity verification PASSED** in [GitHub Actions run #41024989544](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41024989544), commit `e99c2536c4dc44623748e359767931f347954257`. All stages succeeded: Emerald compile, Python syntax, E1 pack, independent verification, exact 64 MiB output and two ELF layout descriptors. The additional [upstream-compatible source CI #41024989681](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41024989681) also **PASSED**, including its modified Emerald and modern-compiler builds. The prior failed run #41024607901 assumed three adjacent original tiles matched; this was corrected in `e99c2536`. **Actual bidirectional portal gameplay and saving in the test town remain unverified.**
+- Added `data/maps/XgbaTestTown/map.json`, `scripts.inc`, and separate copies of source `data/layouts/XgbaTestTown/map.bin` and `border.bin`. Updated map group list and layout table, preserving all original IDs by appending at the end of their existing group and table.
+- New Littleroot scientist at map `(14,12)` warps to `MAP_XGBA_TEST_TOWN` at `(13,12)`. The test town has return scientist at `(14,12)`, witness NPC at `(3,12)`, no house-story warps or Route101 connection, and a minimal mapscript.
+- `tools/xgba_pack_e1.py` builds `xgba-emerald-e1.gba` at exactly 64 MiB; first map layout is relocated to `0x12000000` and the clone layout to `0x12001000`. The clone's **output tile layout** gets a small three-tile variant so the contents are different while source binaries remain separately managed.
+- `.github/workflows/xgba-e1.yml` compiles and runs static pack/verify steps. The inherited upstream workflow on E1 uses `COMPARE=0` intentionally because an edited game is **not** bit-for-bit vanilla. Generated ROMs remain ignored.
+- Local build and manual test instructions: [docs/XGBA_E1_README.md](https://github.com/DevElectrum/xgba-emerald-test/blob/xgba/e1-independent-map/docs/XGBA_E1_README.md).
+- **Unverified until user performs E1 manual test**: bidirectional portals, distinct tile marker, save/reload while standing in clone, collision and NPC events. Preserve an existing save backup; never overwrite the user's important project ROM.
 
 ## User-verified UI milestone and E1 design (2026-10-30)
 

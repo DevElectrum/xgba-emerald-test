@@ -960,3 +960,18 @@ LittlerootTown_Text_BirchSomethingToShowYouAtLab:
 	.string "I have something to show you.\n"
 	.string "Let's go to my LAB.$"
 
+
+
+LittlerootTown_EventScript_XgbaPortal::
+	lock
+	faceplayer
+	msgbox LittlerootTown_Text_XgbaPortal, MSGBOX_DEFAULT
+	closemessage
+	warp MAP_XGBA_TEST_TOWN, 13, 12
+	waitstate
+	release
+	end
+
+LittlerootTown_Text_XgbaPortal:
+	.string "Let's visit the XGBA test town!\n"
+	.string "Our maps have room to grow!$"

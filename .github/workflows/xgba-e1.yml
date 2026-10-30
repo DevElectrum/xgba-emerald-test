@@ -1,0 +1,59 @@
+name: XGBA Emerald E1
+
+on:
+  push:
+    branches:
+      - xgba/e1-independent-map
+    paths-ignore:
+      - '**/*.md'
+      - AGENTS.md
+  pull_request:
+    branches:
+      - xgba/e0-expanded-layout
+
+permissions:
+  contents: read
+
+jobs:
+  independently-addressed-maps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out Emerald fork
+        uses: actions/checkout@v4
+
+      - name: Check out agbcc toolchain
+        uses: actions/checkout@v4
+        with:
+          repository: pret/agbcc
+          path: agbcc
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi libpng-dev
+
+      - name: Install agbcc
+        working-directory: agbcc
+        run: |
+          ./build.sh
+          ./install.sh ../
+
+      - name: Build original Emerald and E1 map additions
+        run: make -j2 all
+
+      - name: Check E1 packer syntax
+        run: python3 -m py_compile tools/xgba_pack_e1.py
+
+      - name: Generate independent E1 maps
+        run: python3 tools/xgba_pack_e1.py pack
+
+      - name: Independently verify E1 map relocation
+        run: python3 tools/xgba_pack_e1.py verify
+
+      - name: Confirm two map descriptors and 64 MiB cartridge
+        run: |
+          test "$(stat -c%s xgba-emerald-e1.gba)" -eq 67108864
+          arm-none-eabi-nm --defined-only pokeemerald.elf | grep -E ' (XgbaTestTown_Layout|LittlerootTown_Layout)$'
+
+      # Generated copyrighted ROM binaries are deliberately not uploaded.
