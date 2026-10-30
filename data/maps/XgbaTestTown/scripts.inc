@@ -30,6 +30,11 @@ Xgba2Neutral_MapScripts::
 XgbaTestTown_EventScript_ToHoenn2::
 	lock
 	faceplayer
+	compare VAR_XGBA_WORLD_ID, 2
+	goto_if_ge XgbaTestTown_EventScript_EnterSelectedWorld
+	setvar VAR_XGBA_WORLD_ID, 2
+XgbaTestTown_EventScript_EnterSelectedWorld:
+	buffernumberstring STR_VAR_1, VAR_XGBA_WORLD_ID
 	msgbox XgbaTestTown_Text_ToHoenn2, MSGBOX_DEFAULT
 	closemessage
 	warp MAP_XGBA2_LITTLEROOT_TOWN, 13, 12
@@ -49,8 +54,32 @@ Xgba2Littleroot_EventScript_Return::
 
 XgbaTestTown_Text_ToHoenn2:
 	.string "Hoenn has a second address!\n"
-	.string "Welcome to WORLD TWO!$"
+	.string "Destination: WORLD {STR_VAR_1}!$"
 
 Xgba2Littleroot_Text_Return:
 	.string "This Hoenn is an independent\n"
 	.string "map network. Back to the lab!$"
+
+
+XgbaTestTown_EventScript_NextWorld::
+	lock
+	faceplayer
+	compare VAR_XGBA_WORLD_ID, 2
+	goto_if_lt XgbaTestTown_EventScript_ResetWorld
+	compare VAR_XGBA_WORLD_ID, 20
+	goto_if_ge XgbaTestTown_EventScript_ResetWorld
+	addvar VAR_XGBA_WORLD_ID, 1
+	goto XgbaTestTown_EventScript_ShowSelectedWorld
+
+XgbaTestTown_EventScript_ResetWorld:
+	setvar VAR_XGBA_WORLD_ID, 2
+
+XgbaTestTown_EventScript_ShowSelectedWorld:
+	buffernumberstring STR_VAR_1, VAR_XGBA_WORLD_ID
+	msgbox XgbaTestTown_Text_NextWorld, MSGBOX_DEFAULT
+	release
+	end
+
+XgbaTestTown_Text_NextWorld:
+	.string "Destination set: WORLD {STR_VAR_1}!\n"
+	.string "Talk to my colleague to warp.$"
