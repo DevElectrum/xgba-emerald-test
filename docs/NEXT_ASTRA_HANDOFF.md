@@ -1,13 +1,13 @@
 # XGBA Emerald experiment: living Astra handoff
 
 Updated: 2026-10-30
-Status: E1 accepted. **E2 core proof accepted (2026-10-30):** static build and 64 MiB ROM verification passed; user confirmed rendering, save/exit/restart/reload within World Two, and repeatedly verified World Two house, Pokémon Center and Poké Mart entrance/exit warps stay in World Two. Outdoor route-boundary traversal and exhaustive 518-map coverage are not yet separately confirmed; story and other world state remain intentionally shared/neutral.
+Status: E1 and E2 accepted. **E3 World 20 selector and save/restart/load confirmed by user with in-game screenshots (2026-10-30)**. User noticed missing tile in left house roof; E3 marker patch removed from ROM packer on `xgba/e3-20-worlds` to restore byte-exact Hoenn tiles. **Tile-preserving E3 ROM build passed CI #41034692808**; still awaiting user to rebuild locally and confirm the repaired roof renders.
 
 ## Read this first
 
 - Canonical ROM test repo: `DevElectrum/xgba-emerald-test`; https://github.com/DevElectrum/xgba-emerald-test
 - The upstream fork source is `pret/pokeemerald`, default branch `master`. Preserve upstream licensing, history and attribution.
-- Current experimental working branch: `xgba/e2-hoenn-network` (draft PR #3), derived from accepted `xgba/e1-independent-map` and `xgba/e0-expanded-layout`; keep fork's `master` unmodified.
+- Current experimental working branch: `xgba/e3-20-worlds` (derived from user-tested E2 branch xgba/e2-hoenn-network, draft PR #3). Preserve E1/E2 baselines and original master.
 - Emulator repo: `DevElectrum/xgba`. The verified P0 core branch is `xgba/p0-validation-20261030`; initial emulator validation draft PR #2: https://github.com/DevElectrum/xgba/pull/2
 - Emulator validation details: https://github.com/DevElectrum/xgba/blob/xgba/p0-validation-20261030/docs/XGBA_P0_VALIDATION_2026-10-30.md
 - **NEVER edit `DevElectrum/grand-anthology`** in this experiment.
@@ -64,6 +64,51 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - Emulator fix in progress on `DevElectrum/xgba` branch `xgba/p1-fast-forward`: removes software and OpenGL renderer VSync and prioritizes the hold-Tab turbo key; verify CI and actual measured speed on Nyx before saying fixed.
 - Primary emulator handoff: https://github.com/DevElectrum/xgba/blob/xgba/p1-fast-forward/docs/NEXT_ASTRA_HANDOFF.md
 
+## E3 user-confirmed World 20 persistence and rooftop repair (2026-10-30)
+
+- **E3 core runtime milestone confirmed by user:** screenshot 1 shows the XGBA Test Town selector saying "Destination: WORLD 20!"; screenshot 2, taken after saving, exiting and relaunching XGBA, shows the cloned Littleroot return scientist saying "World 20 reporting in! Back to the lab!" User explicitly states everything else appears to work. This proves the world ID in SaveBlock1 persisted across a cold emulator restart and the duplicated Hoenn geometry loaded.
+- **Visual regression reported:** screenshot 2 has a missing tile on the roof of the house on the left. E3's cosmetic 5-bit world marker was overwriting full metatile indices near central Littleroot and previously only checked the high collision/elevation bits (`0xFC00`); preserving those attributes does NOT ensure a roof tile remains a roof. World 20 exposes the corruption.
+- **Root-cause fix on E3 branch:** commit `3990b93bdca256dc52ec79df9f6fea66cba3d818` removed the entire `marker_cells/world_marker` helper and the call mutating cloned Littleroot tiles in `tools/xgba_pack_e3.py`. Thus every one of Worlds 3-20 gets original border/map bytes unchanged, with distinct CPU pointers and physical ROM copies. `tools/xgba_pack_e3.py verify` checks exact bytes for all payloads.
+- Removed unused marker preflight from `Makefile` (`6a3a8c31`) and deleted `tools/xgba_test_e3_marker.py` (`88ad5d0a`). The active world remains observable through NPC dialogue in cloned Littleroot and the Test Town selector, without modifying map geometry.
+- IMPORTANT for user rebuilding: an E3 ROM is already present locally. **Do not delete `xgba-emerald-e3.sav`**. Close XGBA, execute `cd ~/Projects/xgba-emerald-test && git pull --ff-only origin xgba/e3-20-worlds && mv xgba-emerald-e3.gba xgba-emerald-e3-with-marker.gba && make e3`; the packer deliberately opens outputs in exclusive mode and will otherwise fail if ROM already exists. The save remains compatible because map IDs/world variable/save layout were not changed.
+- **Fresh ROM-integrity validation PASSED**: [E3 Actions #41034692808](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41034692808) confirms generated 64 MiB ROM, 20 worlds, 16,760 exact expanded-layout/border payloads and relocated World 20 end offset `0x0359F668`. This run includes the tile-preserving packer, removal of obsolete preflight, and unchanged E3 runtime. User roof appearance after rebuilding remains to be checked. No evidence that all 518 maps in all 20 instances have been individually traversed.
+- Branch `xgba/e3-20-worlds`, draft PR #4, derived from accepted E2. Keep `DevElectrum/grand-anthology` untouched.
+
+## E3 marker fix validated in CI (2026-10-30)
+
+- Initial post-failure marker correction `b8611d...` was also too restrictive: CI #41031616416 failed with `Could not locate five unchanged matching-ground tiles for world marker`.
+- **Working fix** `633d5e4d0578035804e6b65491ba9c57e256fca7` chooses five positions whose source tile shares the same high six bits (elevation/collision mask `0xFC00`) as the safe metatile variants, rather than requiring any specific exact tile value. Each set bit changes only a source tile's low metatile index; unset bits preserve the original. The variants are sampled from the existing Littleroot layout.
+- **Full E3 CI #41032096903 PASSED** this marker code: normal Emerald compilation, full 64 MiB E3 pack and verification, 16,760 expanded-ROM tile/border payloads and 20 world entries, with the final World 20 data ending at `0x0359F668`. https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41032096903 .
+- Added `tools/xgba_test_e3_marker.py` in `ab5b8e4766f203bbcdc37e64ccf3b3d392f28430`, and inserted an automatic marker preflight before full compilation in Makefile commit `c0181a5ea1138ce7c40fb4d7f9f674ce0514138f`. **Both the marker preflight and full ROM build PASSED in [Actions #41032163852](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41032163852)**; logs report `E3 marker preflight PASS: all 18 world IDs, five safe tile slots`, then the full 16,760-payload 64 MiB E3 ROM verification.
+- Local recovery for user: `cd ~/Projects/xgba-emerald-test && git pull --ff-only origin xgba/e3-20-worlds && make e3`. The previous failed packer created no E3 ROM, so there is normally nothing to delete. Expected ROM: `xgba-emerald-e3.gba` 67,108,864 bytes.
+- Still need user to confirm Worlds 3/20 selection, route transitions, building exits, and save/restart/reload. Do not claim 20-world runtime gameplay accepted from CI alone.
+## E3 marker failure on Nyx, corrective fix (2026-10-30)
+
+- User ran `make e3` on `xgba/e3-20-worlds`. **Emerald compilation/linking passed** (EWRAM 249,776 bytes, IWRAM 30,892 bytes). `tools/xgba_pack_e3.py pack` then raised `ValueError: World marker would overwrite a non-ground tile` inside `world_marker()` after assuming five fixed positions in cloned Littleroot had identical ground tiles.
+- Confirmed this is a **ROM packer marker assumption**, not XGBA emulator, linker, map tables or 64 MiB addressability. Earlier E3 pre-marker build passed CI #41029580141; subsequent marker-added CI runs failed.
+- **Corrective fix committed** to packer in `b8611d6472a3cb387937d1016e602f047ac5c675`: select five existing equal ground tiles near the center of Littleroot by scanning rows 12, 11, 10, 9, 8 (columns 6-12), then encode binary `world - 2` using matching upper 6-bit metatile attributes; no longer require a fixed five-tile strip to be uniform. README corrected in `f75425bf6dd9447c40d023b8f6e1724f2436fac2`.
+- The post-fix CI status must be checked before claiming successful 20-world marker build. See the latest runs of `.github/workflows/xgba-e3.yml`, including #41031616416 (fix) and #41031653299 (docs update). If further packer errors occur, inspect the exact line from logs and correct without compromising safety checks.
+- User should run `git pull --ff-only origin xgba/e3-20-worlds`, then `make e3` (if no output ROM from failed packer, no deletion needed). Use the user-reported emulator Qt frontend to test Worlds 3 and 20, separate geometry and save/reload.
+## E3 successful CI evidence (2026-10-30)
+
+- Clean [GitHub Actions run #41029580141](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41029580141) **PASSED every step**: tools syntax, generator, Emerald compile, full 64 MiB pack, independent verify and 20-instance manifest assertions.
+- Manifest confirms World 1 original Hoenn + World 2 E2 shared network + **18 additional physical world payload sets**. Each of Worlds 3-20 has 441 distinct layout entries, 882 tile/border assets, **652,904 bytes of physical geometry**, fixed 1 MiB block stride.
+- Verified generated cartridge size **67,108,864 bytes**. Last World 20 payload ends at ROM file offset **0x0359F668** (56,227,432), leaving room inside the 64 MiB cartridge. Total E3 check covered **16,760 tile/border payloads**, including E1/E2.
+- The CI build proves the generated and relocated bytes, not that the C runtime pointer selector and in-game world switch work under real XGBA graphics/saving. User's XGBA interactive tests are still needed. Explicitly test selector IDs World 3 and World 20, route borders/interior doors, leave and reenter world, and save/restart/reload.
+- Draft PR #4 is https://github.com/DevElectrum/xgba-emerald-test/pull/4, targeting the E2 experimental branch. Keep draft until user acceptance.
+- GitHub's inherited `.github/workflows/build.yml` originally started normal/modern compilation without generating E3 map JSON/headers. Updated it in commit `d793be4da5fc37a8a63118eaa07a18c1983270b2` to run E2 and E3 generators before the original standard + modern compiler jobs. This CI-specific addition has not itself been confirmed green yet; check the latest `CI` workflow on draft PR #4.
+## E3 implementation: 20 Hoenn geography instances (2026-10-30)
+
+- New branch: `xgba/e3-20-worlds` based on user-tested E2. Previous E2 map network generation remains intact; no writes to Grand Anthology or master.
+- Architecture: original Hoenn is World 1; E2's tested cloned map group network is World 2. Worlds 3..20 reuse E2's 518 map header/warp/connection definitions and switch **separate physical copies** of 441 tile maps plus 441 borders by a persistent `VAR_XGBA_WORLD_ID=0x40FF` (previously unused SaveBlock1 event var). This avoids 680 map groups, whose group indexes exceed eight bits.
+- `src/overworld.c` uses `XgbaGetWorldLayout()` for the active map; `src/fieldmap.c` applies it to neighboring maps when copying route border tiles. Temporary active/connection layout structs are separate so neighbor rendering does not overwrite the active pointer. `include/xgba_world_e3.h` declares the API.
+- `tools/xgba_generate_e3.py` generates ignored `include/xgba_world_e3_data.h` with 441 per-layout map/border offsets. `tools/xgba_pack_e3.py` preserves verified E2 payloads and adds 18 physical world chunks from file offset `0x02400000`, 1 MiB per chunk, all within a 64 MiB tagged ROM. All source/offset/payload bytes are verified.
+- Later E3 **visual verification upgrade**: commit `173dc589b2a6d8b2b5682d3ea585df98aa3ffc17` adds a five-ground-tile marker to cloned Littleroot only in Worlds 3-20, encoding `world_id - 2` in binary; the other 440 map layouts are copied unchanged. The return scientist now buffers and displays the active world ID (commit `eb013c91ad1a0071ddc8fc00e620a25eaa305b92`). These upgrades require their own CI pass and gameplay confirmation.
+- In XGBA Test Town, a new scientist NPC at `(18,12)` cycles destination IDs **2 through 20**. Existing destination scientist `(16,12)` now warps into the chosen world and reports number. The E2 return NPC at cloned Littleroot `(14,12)` remains unchanged. Worlds 2..20 share warp graph and story suppression.
+- `make e3` runs E2 map generator, E3 offset generator, Emerald compilation, E3 pack, E3 verify. Dedicated `.github/workflows/xgba-e3.yml` tests on branch pushes; docs/XGBA_E3_README.md describes local commands and portal checks.
+- Important E3 LIMITS: geometry copies, not 20 independent stories or save slots; same encounter/trainer/global flags across worlds, and script/dynamic Fly/Teleport routing isn't redirected. World ID saved in the existing event var; no enlargement of persistent save RAM.
+- E3 **static clean CI PASSED**: https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41029580141 . Game acceptance is still pending.
+- Immediate next steps: (1) inspect E3 clean CI logs and fix compile/packer failures, (2) produce xgba-emerald-e3.gba locally with `make e3`, (3) user visits Worlds 3 and 20, tests interior/route transitions, save-restart-reload and Tab/Qt.
 ## E2 World Two door routing CONFIRMED by user (2026-10-30)
 
 - User explicitly states they tested **multiple times** that houses, **Pokémon Centers** and **Poké Marts** entered in Hoenn World Two return to **Hoenn World Two**, never original Hoenn.

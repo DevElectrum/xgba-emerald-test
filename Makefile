@@ -159,7 +159,7 @@ MAKEFLAGS += --no-print-directory
 # Delete files that weren't built properly
 .DELETE_ON_ERROR:
 
-RULES_NO_SCAN += libagbsyscall clean clean-assets tidy tidymodern tidynonmodern generated clean-generated e2
+RULES_NO_SCAN += libagbsyscall clean clean-assets tidy tidymodern tidynonmodern generated clean-generated e2 e3
 .PHONY: all rom modern compare
 .PHONY: $(RULES_NO_SCAN)
 
@@ -404,3 +404,12 @@ e2:
 	$(MAKE) -j2 all
 	python3 tools/xgba_pack_e2.py pack
 	python3 tools/xgba_pack_e2.py verify
+
+
+.PHONY: e3
+e3:
+	python3 tools/xgba_generate_e2.py
+	python3 tools/xgba_generate_e3.py
+	$(MAKE) -j2 all
+	python3 tools/xgba_pack_e3.py pack
+	python3 tools/xgba_pack_e3.py verify

@@ -1,5 +1,7 @@
 #include "global.h"
 #include "overworld.h"
+#include "xgba_world_e3.h"
+#include "xgba_world_e3_data.h"
 #include "battle_pyramid.h"
 #include "battle_setup.h"
 #include "berry.h"
@@ -529,11 +531,37 @@ static void InitMapView(void)
     InitTilesetAnimations();
 }
 
+EWRAM_DATA static struct MapLayout sXgbaActiveWorldLayout = {0};
+EWRAM_DATA static struct MapLayout sXgbaConnectionWorldLayout = {0};
+
+const struct MapLayout *XgbaGetWorldLayout(const struct MapLayout *original, u16 layoutId, bool8 connection)
+{
+    u16 worldId = VarGet(VAR_XGBA_WORLD_ID);
+    u16 index;
+    u32 offset;
+    struct MapLayout *layout;
+
+    if (original == NULL || worldId < XGBA_E3_FIRST_WORLD || worldId > XGBA_E3_LAST_WORLD)
+        return original;
+
+    if (layoutId < XGBA_E3_FIRST_LAYOUT_ID
+     || layoutId >= XGBA_E3_FIRST_LAYOUT_ID + XGBA_E3_LAYOUT_COUNT)
+        return original;
+
+    index = layoutId - XGBA_E3_FIRST_LAYOUT_ID;
+    offset = XGBA_E3_START_OFFSET + (worldId - XGBA_E3_FIRST_WORLD) * XGBA_E3_WORLD_STRIDE;
+    layout = connection ? &sXgbaConnectionWorldLayout : &sXgbaActiveWorldLayout;
+    *layout = *original;
+    layout->border = (const u16 *)(0x10000000u + offset + sXgbaE3BorderOffsets[index]);
+    layout->map = (const u16 *)(0x10000000u + offset + sXgbaE3MapOffsets[index]);
+    return layout;
+}
+
 const struct MapLayout *GetMapLayout(void)
 {
     u16 mapLayoutId = gSaveBlock1Ptr->mapLayoutId;
     if (mapLayoutId)
-        return gMapLayouts[mapLayoutId - 1];
+        return XgbaGetWorldLayout(gMapLayouts[mapLayoutId - 1], mapLayoutId, FALSE);
     return NULL;
 }
 
