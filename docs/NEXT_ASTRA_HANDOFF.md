@@ -1,13 +1,13 @@
 # XGBA Emerald experiment: living Astra handoff
 
 Updated: 2026-10-30
-Status: E1 accepted. **E2 core proof accepted (2026-10-30):** static build and 64 MiB ROM verification passed; user confirmed rendering, save/exit/restart/reload within World Two, and repeatedly verified World Two house, Pokémon Center and Poké Mart entrance/exit warps stay in World Two. Outdoor route-boundary traversal and exhaustive 518-map coverage are not yet separately confirmed; story and other world state remain intentionally shared/neutral.
+Status: E1 accepted, E2 core geography/indoor warp/persistence accepted by user. **E3 twenty-world geometry selector is implemented on xgba/e3-20-worlds but CI and actual game testing are still pending.**
 
 ## Read this first
 
 - Canonical ROM test repo: `DevElectrum/xgba-emerald-test`; https://github.com/DevElectrum/xgba-emerald-test
 - The upstream fork source is `pret/pokeemerald`, default branch `master`. Preserve upstream licensing, history and attribution.
-- Current experimental working branch: `xgba/e2-hoenn-network` (draft PR #3), derived from accepted `xgba/e1-independent-map` and `xgba/e0-expanded-layout`; keep fork's `master` unmodified.
+- Current experimental working branch: `xgba/e3-20-worlds` (derived from user-tested E2 branch xgba/e2-hoenn-network, draft PR #3). Preserve E1/E2 baselines and original master.
 - Emulator repo: `DevElectrum/xgba`. The verified P0 core branch is `xgba/p0-validation-20261030`; initial emulator validation draft PR #2: https://github.com/DevElectrum/xgba/pull/2
 - Emulator validation details: https://github.com/DevElectrum/xgba/blob/xgba/p0-validation-20261030/docs/XGBA_P0_VALIDATION_2026-10-30.md
 - **NEVER edit `DevElectrum/grand-anthology`** in this experiment.
@@ -64,6 +64,17 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - Emulator fix in progress on `DevElectrum/xgba` branch `xgba/p1-fast-forward`: removes software and OpenGL renderer VSync and prioritizes the hold-Tab turbo key; verify CI and actual measured speed on Nyx before saying fixed.
 - Primary emulator handoff: https://github.com/DevElectrum/xgba/blob/xgba/p1-fast-forward/docs/NEXT_ASTRA_HANDOFF.md
 
+## E3 implementation: 20 Hoenn geography instances (2026-10-30)
+
+- New branch: `xgba/e3-20-worlds` based on user-tested E2. Previous E2 map network generation remains intact; no writes to Grand Anthology or master.
+- Architecture: original Hoenn is World 1; E2's tested cloned map group network is World 2. Worlds 3..20 reuse E2's 518 map header/warp/connection definitions and switch **separate physical copies** of 441 tile maps plus 441 borders by a persistent `VAR_XGBA_WORLD_ID=0x40FF` (previously unused SaveBlock1 event var). This avoids 680 map groups, whose group indexes exceed eight bits.
+- `src/overworld.c` uses `XgbaGetWorldLayout()` for the active map; `src/fieldmap.c` applies it to neighboring maps when copying route border tiles. Temporary active/connection layout structs are separate so neighbor rendering does not overwrite the active pointer. `include/xgba_world_e3.h` declares the API.
+- `tools/xgba_generate_e3.py` generates ignored `include/xgba_world_e3_data.h` with 441 per-layout map/border offsets. `tools/xgba_pack_e3.py` preserves verified E2 payloads and adds 18 physical world chunks from file offset `0x02400000`, 1 MiB per chunk, all within a 64 MiB tagged ROM. All source/offset/payload bytes are verified.
+- In XGBA Test Town, a new scientist NPC at `(18,12)` cycles destination IDs **2 through 20**. Existing destination scientist `(16,12)` now warps into the chosen world and reports number. The E2 return NPC at cloned Littleroot `(14,12)` remains unchanged. Worlds 2..20 share warp graph and story suppression.
+- `make e3` runs E2 map generator, E3 offset generator, Emerald compilation, E3 pack, E3 verify. Dedicated `.github/workflows/xgba-e3.yml` tests on branch pushes; docs/XGBA_E3_README.md describes local commands and portal checks.
+- Important E3 LIMITS: geometry copies, not 20 independent stories or save slots; same encounter/trainer/global flags across worlds, and script/dynamic Fly/Teleport routing isn't redirected. World ID saved in the existing event var; no enlargement of persistent save RAM.
+- At first writing, **E3 clean CI has not finished**: https://github.com/DevElectrum/xgba-emerald-test/actions/workflows/xgba-e3.yml . Do not claim build pass or game acceptance without evidence.
+- Immediate next steps: (1) inspect E3 clean CI logs and fix compile/packer failures, (2) produce xgba-emerald-e3.gba locally with `make e3`, (3) user visits Worlds 3 and 20, tests interior/route transitions, save-restart-reload and Tab/Qt.
 ## E2 World Two door routing CONFIRMED by user (2026-10-30)
 
 - User explicitly states they tested **multiple times** that houses, **Pokémon Centers** and **Poké Marts** entered in Hoenn World Two return to **Hoenn World Two**, never original Hoenn.
