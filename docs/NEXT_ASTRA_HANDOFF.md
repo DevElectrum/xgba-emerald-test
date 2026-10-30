@@ -57,10 +57,17 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - Conventional Emerald ROM linker footprint was **14,929,764 bytes**, as also seen in CI. This confirms build/ROM integrity on the user's machine, **not** gameplay.
 - The remaining E0 gate is launch of **the XGBA validation branch's SDL frontend**, not regular mGBA, and verifying the game from intro through Littleroot, warps, events, save and reload.
 
+## User-confirmed gameplay and mandatory turbo requirement (2026-10-30)
+
+- User built `xgba-emerald-e0.gba` locally and then reported that it **works fine** in their XGBA emulator. The 64 MiB ROM and relocated Littleroot layout have therefore passed a user-reported *initial interactive smoke test*. Do **not** infer that every listed warp/event/save/reload test has been explicitly completed.
+- User explicitly requires fast-forward in XGBA. The prior SDL build was unsatisfactory because turbo was ineffective. This is a **mandatory acceptance gate for any future emulator build/recommendation**.
+- Emulator fix in progress on `DevElectrum/xgba` branch `xgba/p1-fast-forward`: removes software and OpenGL renderer VSync and prioritizes the hold-Tab turbo key; verify CI and actual measured speed on Nyx before saying fixed.
+- Primary emulator handoff: https://github.com/DevElectrum/xgba/blob/xgba/p1-fast-forward/docs/NEXT_ASTRA_HANDOFF.md
+
 ## Immediate next three steps
 
 1. Recheck latest `xgba/e0-expanded-layout` branch and the newest CI run after any code change, and keep E0 PR draft.
-2. On Nyx, build the expanded ROM locally from this branch and launch in **XGBA** (not ordinary mGBA). Confirm game start, entry into Littleroot, movement, warps/events, save and reload. Treat as **human/manual test** until actually performed.
+2. The user reports their local expanded ROM **works fine** in XGBA. Complete explicit warps/events/save/reload testing as needed; also **retest with XGBA's turbo-fix branch** and confirm hold-Tab fast-forward exceeds normal speed.
 3. After manual E0 proof, implement a second independently addressable test map and a warp between original and clone. Do not start 20 Hoenns or PC expansion before this gate.
 
 ## E0 work and tests
