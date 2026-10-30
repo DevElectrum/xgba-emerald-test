@@ -92,6 +92,12 @@
 #define FLAG_UNUSED_0x04E    0x4E // Unused Flag
 #define FLAG_UNUSED_0x04F    0x4F // Unused Flag
 
+// E4 world bank virtualizes flags 0x020..0x04F (48 flags per world).
+// These values were unused in vanilla Emerald and are kept for the prototype.
+#define FLAG_XGBA_E4_FIRST_VISIT  0x020
+#define FLAG_XGBA_E4_START        0x020
+#define FLAG_XGBA_E4_END          0x04F
+
 // Scripts
 #define FLAG_HIDE_SKY_PILLAR_TOP_RAYQUAZA_STILL  0x50
 #define FLAG_SET_WALL_CLOCK                      0x51

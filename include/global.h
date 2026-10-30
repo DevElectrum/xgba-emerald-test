@@ -981,6 +981,26 @@ struct ExternalEventFlags
 
 } __attribute__((packed));/*size = 0x15*/
 
+#define XGBA_E4_WORLD_COUNT 20
+#define XGBA_E4_VARIABLE_COUNT 4
+#define XGBA_E4_FLAG_BYTES 6
+
+struct XgbaWorldEventState
+{
+    u16 vars[XGBA_E4_VARIABLE_COUNT];
+    u8 flags[XGBA_E4_FLAG_BYTES];
+    u8 reserved[2];
+};
+
+struct XgbaWorldStateBank
+{
+    u32 magic;
+    struct XgbaWorldEventState worlds[XGBA_E4_WORLD_COUNT];
+    u8 reserved[60];
+};
+
+typedef char XgbaE4BankFitsExistingSaveArea[(sizeof(struct XgbaWorldStateBank) == 0x180) ? 1 : -1];
+
 struct SaveBlock1
 {
     /*0x00*/ struct Coords16 pos;
@@ -1064,7 +1084,7 @@ struct SaveBlock1
     /*0x31DC*/ struct Roamer roamer;
     /*0x31F8*/ struct EnigmaBerry enigmaBerry;
     /*0x322C*/ struct MysteryGiftSave mysteryGift;
-    /*0x3598*/ u8 unused_3598[0x180];
+    /*0x3598*/ struct XgbaWorldStateBank xgbaWorldStateBank;
     /*0x3718*/ u32 trainerHillTimes[NUM_TRAINER_HILL_MODES];
     /*0x3728*/ struct RamScript ramScript;
     /*0x3B14*/ struct RecordMixingGift recordMixingGift;
@@ -1077,6 +1097,8 @@ struct SaveBlock1
     /*0x3D70*/ struct WaldaPhrase waldaPhrase;
     // sizeof: 0x3D88
 };
+
+typedef char XgbaE4SaveBlockPreservesEmeraldFormat[(sizeof(struct SaveBlock1) == 0x3D88) ? 1 : -1];
 
 extern struct SaveBlock1 *gSaveBlock1Ptr;
 

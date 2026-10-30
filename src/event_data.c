@@ -161,8 +161,35 @@ bool32 CanResetRTC(void)
         return FALSE;
 }
 
+#define XGBA_E4_SAVE_MAGIC 0x34454758
+
+static void XgbaE4EnsureWorldBank(void)
+{
+    struct XgbaWorldStateBank *bank = &gSaveBlock1Ptr->xgbaWorldStateBank;
+
+    if (bank->magic != XGBA_E4_SAVE_MAGIC)
+    {
+        memset(bank, 0, sizeof(*bank));
+        bank->magic = XGBA_E4_SAVE_MAGIC;
+    }
+}
+
+static u8 XgbaE4GetWorldIndex(void)
+{
+    u16 world = gSaveBlock1Ptr->vars[VAR_XGBA_WORLD_ID - VARS_START];
+
+    if (world < 2 || world > XGBA_E4_WORLD_COUNT)
+        return 0;
+    return world - 1;
+}
+
 u16 *GetVarPointer(u16 id)
 {
+    if (id >= VAR_XGBA_E4_PROGRESS && id <= VAR_XGBA_E4_SCORE)
+    {
+        XgbaE4EnsureWorldBank();
+        return &gSaveBlock1Ptr->xgbaWorldStateBank.worlds[XgbaE4GetWorldIndex()].vars[id - VAR_XGBA_E4_PROGRESS];
+    }
     if (id < VARS_START)
         return NULL;
     else if (id < SPECIAL_VARS_START)
@@ -195,6 +222,11 @@ u8 VarGetObjectEventGraphicsId(u8 id)
 
 u8 *GetFlagPointer(u16 id)
 {
+    if (id >= FLAG_XGBA_E4_START && id <= FLAG_XGBA_E4_END)
+    {
+        XgbaE4EnsureWorldBank();
+        return &gSaveBlock1Ptr->xgbaWorldStateBank.worlds[XgbaE4GetWorldIndex()].flags[(id - FLAG_XGBA_E4_START) / 8];
+    }
     if (id == 0)
         return NULL;
     else if (id < SPECIAL_FLAGS_START)

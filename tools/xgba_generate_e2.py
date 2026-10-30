@@ -135,6 +135,26 @@ def main():
                 "script": "Xgba2Littleroot_EventScript_Return",
                 "flag": "0",
             })
+            clone["object_events"].append({
+                "graphics_id": "OBJ_EVENT_GFX_SCIENTIST_2",
+                "x": 16, "y": 12, "elevation": 3,
+                "movement_type": "MOVEMENT_TYPE_FACE_DOWN",
+                "movement_range_x": 0, "movement_range_y": 0,
+                "trainer_type": "TRAINER_TYPE_NONE",
+                "trainer_sight_or_berry_tree_id": "0",
+                "script": "XgbaE4_EventScript_AdvanceProgress",
+                "flag": "0",
+            })
+            clone["object_events"].append({
+                "graphics_id": "OBJ_EVENT_GFX_BOY_1",
+                "x": 18, "y": 12, "elevation": 3,
+                "movement_type": "MOVEMENT_TYPE_FACE_DOWN",
+                "movement_range_x": 0, "movement_range_y": 0,
+                "trainer_type": "TRAINER_TYPE_NONE",
+                "trainer_sight_or_berry_tree_id": "0",
+                "script": "XgbaE4_EventScript_ReadProgress",
+                "flag": "0",
+            })
 
         write_if_changed(MAP_ROOT / clone_name / "map.json", clone)
 

@@ -1,0 +1,61 @@
+name: XGBA Emerald E4 world state
+
+on:
+  push:
+    branches:
+      - xgba/e4-world-state
+    paths-ignore:
+      - '**/*.md'
+      - AGENTS.md
+  pull_request:
+    branches:
+      - xgba/e3-20-worlds
+
+permissions:
+  contents: read
+
+jobs:
+  banked-world-state:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out Emerald fork
+        uses: actions/checkout@v4
+
+      - name: Check out agbcc toolchain
+        uses: actions/checkout@v4
+        with:
+          repository: pret/agbcc
+          path: agbcc
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi libpng-dev
+
+      - name: Install agbcc
+        working-directory: agbcc
+        run: |
+          ./build.sh
+          ./install.sh ../
+
+      - name: Generate E4 maps, compile save bank, pack and verify
+        run: make e4
+
+      - name: Verify native event bank and unchanged save block size
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path("include/global.h").read_text()
+          events = Path("src/event_data.c").read_text()
+          assert "XgbaE4SaveBlockPreservesEmeraldFormat" in source
+          assert "XgbaE4BankFitsExistingSaveArea" in source
+          assert "worlds[XGBA_E4_WORLD_COUNT]" in source
+          assert "XgbaE4EnsureWorldBank" in events
+          assert "VAR_XGBA_E4_PROGRESS" in events
+          assert "FLAG_XGBA_E4_START" in events
+          assert Path("xgba-emerald-e4.gba").stat().st_size == 67108864
+          print("E4 world banks compile in unchanged SaveBlock1; output is 64 MiB")
+          PY
+
+      # No copyrighted ROM images or save files are uploaded.

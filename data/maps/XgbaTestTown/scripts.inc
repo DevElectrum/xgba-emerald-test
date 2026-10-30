@@ -84,3 +84,54 @@ XgbaTestTown_EventScript_ShowSelectedWorld:
 XgbaTestTown_Text_NextWorld:
 	.string "Destination set: WORLD {STR_VAR_1}!\n"
 	.string "Talk to my colleague to warp.$"
+
+
+XgbaE4_EventScript_AdvanceProgress::
+	lock
+	faceplayer
+	addvar VAR_XGBA_E4_PROGRESS, 1
+	goto_if_set FLAG_XGBA_E4_FIRST_VISIT, XgbaE4_EventScript_ProgressAlreadyVisited
+	setflag FLAG_XGBA_E4_FIRST_VISIT
+	buffernumberstring STR_VAR_1, VAR_XGBA_WORLD_ID
+	buffernumberstring STR_VAR_2, VAR_XGBA_E4_PROGRESS
+	msgbox XgbaE4_Text_FirstProgress, MSGBOX_DEFAULT
+	release
+	end
+
+XgbaE4_EventScript_ProgressAlreadyVisited:
+	buffernumberstring STR_VAR_1, VAR_XGBA_WORLD_ID
+	buffernumberstring STR_VAR_2, VAR_XGBA_E4_PROGRESS
+	msgbox XgbaE4_Text_AdvancedProgress, MSGBOX_DEFAULT
+	release
+	end
+
+XgbaE4_EventScript_ReadProgress::
+	lock
+	faceplayer
+	buffernumberstring STR_VAR_1, VAR_XGBA_WORLD_ID
+	buffernumberstring STR_VAR_2, VAR_XGBA_E4_PROGRESS
+	goto_if_set FLAG_XGBA_E4_FIRST_VISIT, XgbaE4_EventScript_ProgressReadVisited
+	msgbox XgbaE4_Text_UnvisitedProgress, MSGBOX_DEFAULT
+	release
+	end
+
+XgbaE4_EventScript_ProgressReadVisited:
+	msgbox XgbaE4_Text_VisitedProgress, MSGBOX_DEFAULT
+	release
+	end
+
+XgbaE4_Text_FirstProgress:
+	.string "World {STR_VAR_1}: progress {STR_VAR_2}!\n"
+	.string "This world's flag is now set.$"
+
+XgbaE4_Text_AdvancedProgress:
+	.string "World {STR_VAR_1}: progress {STR_VAR_2}!\n"
+	.string "Your flag was already set.$"
+
+XgbaE4_Text_UnvisitedProgress:
+	.string "World {STR_VAR_1}: progress {STR_VAR_2}.\n"
+	.string "Local event flag: CLEAR.$"
+
+XgbaE4_Text_VisitedProgress:
+	.string "World {STR_VAR_1}: progress {STR_VAR_2}.\n"
+	.string "Local event flag: SET.$"
