@@ -71,6 +71,7 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - Verified generated cartridge size **67,108,864 bytes**. Last World 20 payload ends at ROM file offset **0x0359F668** (56,227,432), leaving room inside the 64 MiB cartridge. Total E3 check covered **16,760 tile/border payloads**, including E1/E2.
 - The CI build proves the generated and relocated bytes, not that the C runtime pointer selector and in-game world switch work under real XGBA graphics/saving. User's XGBA interactive tests are still needed. Explicitly test selector IDs World 3 and World 20, route borders/interior doors, leave and reenter world, and save/restart/reload.
 - Draft PR #4 is https://github.com/DevElectrum/xgba-emerald-test/pull/4, targeting the E2 experimental branch. Keep draft until user acceptance.
+- GitHub's inherited `.github/workflows/build.yml` originally started normal/modern compilation without generating E3 map JSON/headers. Updated it in commit `d793be4da5fc37a8a63118eaa07a18c1983270b2` to run E2 and E3 generators before the original standard + modern compiler jobs. This CI-specific addition has not itself been confirmed green yet; check the latest `CI` workflow on draft PR #4.
 ## E3 implementation: 20 Hoenn geography instances (2026-10-30)
 
 - New branch: `xgba/e3-20-worlds` based on user-tested E2. Previous E2 map network generation remains intact; no writes to Grand Anthology or master.
