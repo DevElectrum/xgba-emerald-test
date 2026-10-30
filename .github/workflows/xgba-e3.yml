@@ -1,0 +1,65 @@
+name: XGBA Emerald E3 twenty worlds
+
+on:
+  push:
+    branches:
+      - xgba/e3-20-worlds
+    paths-ignore:
+      - '**/*.md'
+      - AGENTS.md
+  pull_request:
+    branches:
+      - xgba/e2-hoenn-network
+
+permissions:
+  contents: read
+
+jobs:
+  twenty-hoenn-worlds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out Emerald fork
+        uses: actions/checkout@v4
+
+      - name: Check out agbcc toolchain
+        uses: actions/checkout@v4
+        with:
+          repository: pret/agbcc
+          path: agbcc
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi libpng-dev
+
+      - name: Install agbcc
+        working-directory: agbcc
+        run: |
+          ./build.sh
+          ./install.sh ../
+
+      - name: Check E3 generator and packer syntax
+        run: |
+          python3 -m py_compile tools/xgba_generate_e3.py tools/xgba_pack_e3.py
+
+      - name: Generate, build and verify 20-world Emerald
+        run: make e3
+
+      - name: Assert 20 instances with 18 new physical world blocks
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          m = json.loads(Path('build/xgba-e3-manifest.json').read_text())
+          assert m['worlds_total_including_original'] == 20, m
+          assert m['additional_physical_worlds'] == 18, m
+          assert m['layout_count_per_world'] == 441, m
+          assert m['assets_per_world'] == 882, m
+          assert m['per_world_bytes'] <= 0x100000, m
+          assert m['last_data_end_file_offset'] <= 67108864, m
+          assert Path('xgba-emerald-e3.gba').stat().st_size == 67108864
+          print(m)
+          PY
+
+      # Never upload or commit copyrighted ROM images.
