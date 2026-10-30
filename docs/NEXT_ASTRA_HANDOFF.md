@@ -64,6 +64,14 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - Emulator fix in progress on `DevElectrum/xgba` branch `xgba/p1-fast-forward`: removes software and OpenGL renderer VSync and prioritizes the hold-Tab turbo key; verify CI and actual measured speed on Nyx before saying fixed.
 - Primary emulator handoff: https://github.com/DevElectrum/xgba/blob/xgba/p1-fast-forward/docs/NEXT_ASTRA_HANDOFF.md
 
+## E4 user-confirmed live independent world state (2026-10-30)
+
+- User successfully built `xgba-emerald-e4.gba` on Nyx with `make e4`: exact 64 MiB ROM, 20 geography instances and 16,760 verified expanded-ROM payloads. E4 save copied separately from E3 (`xgba-emerald-e4.sav`).
+- **User confirmed in real XGBA gameplay**: in World 20 auditor initially showed progress **0**, flag **CLEAR**; after talking to writer three times, auditor showed progress **3**, flag **SET**.
+- After switching to World 3, auditor showed **0 / CLEAR**. Writer once, then auditor showed **1 / SET**. After switching *back* to World 20, auditor still reported **progress 3**. Hence world-local variable+flag writes/readback and different counters survive round-trip world switching. World 20 flag after this last return has not been separately reconfirmed in the user's newest message.
+- **Next required test is E4 cold-restart save persistence**: user currently in World 20; save using in-game menu, completely exit XGBA, relaunch same E4 ROM and .sav, check World 20 audit NPC remains **3 / SET**. Then optionally travel to World 3 and confirm **1 / SET** after reload. Until then, do NOT describe E4 save/restart persistence as user accepted.
+- No terminal commands needed for this phase. The user requested step-by-step gameplay instructions rather than multiple technical commands at once.
+
 ## E4 clean CI build passed (2026-10-30)
 
 - [Dedicated E4 Actions #41036086285](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41036086285) **SUCCEEDED**: generator, modified Emerald compiler/linker, 64 MiB E4 ROM pack/verify, exact original SaveBlock1 compile guard, and static event-bank presence check.
