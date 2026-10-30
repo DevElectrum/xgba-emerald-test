@@ -8,6 +8,7 @@
 #include "menu.h"
 #include "mirage_tower.h"
 #include "overworld.h"
+#include "xgba_world_e3.h"
 #include "palette.h"
 #include "pokenav.h"
 #include "script.h"
@@ -54,9 +55,19 @@ static bool8 IsCoordInIncomingConnectingMap(s32 coord, s32 srcMax, s32 destMax, 
 
 #define GetMapGridBlockAt(x, y) (AreCoordsWithinMapGridBounds(x, y) ? gBackupMapLayout.map[x + gBackupMapLayout.width * y] : GetBorderBlockAt(x, y))
 
+EWRAM_DATA static struct MapHeader sXgbaConnectedMapHeader = {0};
+
 const struct MapHeader *const GetMapHeaderFromConnection(const struct MapConnection *connection)
 {
-    return Overworld_GetMapHeaderByGroupAndId(connection->mapGroup, connection->mapNum);
+    const struct MapHeader *map = Overworld_GetMapHeaderByGroupAndId(connection->mapGroup, connection->mapNum);
+    if (map == NULL)
+        return NULL;
+
+    sXgbaConnectedMapHeader = *map;
+    sXgbaConnectedMapHeader.mapLayout = XgbaGetWorldLayout(
+        map->mapLayout, map->mapLayoutId, TRUE
+    );
+    return &sXgbaConnectedMapHeader;
 }
 
 void InitMap(void)
