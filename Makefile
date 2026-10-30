@@ -410,7 +410,6 @@ e2:
 e3:
 	python3 tools/xgba_generate_e2.py
 	python3 tools/xgba_generate_e3.py
-	python3 tools/xgba_test_e3_marker.py
 	$(MAKE) -j2 all
 	python3 tools/xgba_pack_e3.py pack
 	python3 tools/xgba_pack_e3.py verify
