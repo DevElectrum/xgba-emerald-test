@@ -23,6 +23,21 @@ make e3
 ~/Projects/xgba/build-xgba-gui/qt/mgba-qt ~/Projects/xgba-emerald-test/xgba-emerald-e3.gba
 ```
 
+## Rebuild after the World 20 roof marker fix (October 30, 2026)
+
+The user confirmed successful **World 20 save, restart and reload** with the previous E3 ROM, but noticed a missing tile on Littleroot's left-hand house roof. This was caused by the cosmetic world marker changing real map metatile IDs. The marker has been **removed entirely**; current E3 duplicates the original map and border data byte-for-byte in every world.
+
+An old `xgba-emerald-e3.gba` file must be preserved/moved before packing because the packer refuses to overwrite it. On Nyx, **close XGBA** and run:
+
+```bash
+cd ~/Projects/xgba-emerald-test
+git pull --ff-only origin xgba/e3-20-worlds
+mv --backup=numbered xgba-emerald-e3.gba xgba-emerald-e3-with-marker.gba
+make e3
+```
+
+Launch the new `xgba-emerald-e3.gba` in Qt XGBA using the same `xgba-emerald-e3.sav`. **Do not rename or delete the save.** Map IDs, world variable and save structure are unchanged. The World 20 return scientist should still say "World 20" after reload. Revisit the left house roof: the roof should now render normally. Byte-verification passed in [Actions #41034692808](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41034692808); final visual validation is still up to the user.
+
 IMPORTANT: Use `make e3`, not plain `make`, on a fresh checkout. It generates E2 maps/groups and then include/xgba_world_e3_data.h before compiling the modified C sources. It creates an output ROM named xgba-emerald-e3.gba. The packer refuses overwriting existing ROMs. Earlier E1/E2 ROMs remain intact.
 
 The E3 generator changes tracked `data/maps/map_groups.json` and `data/layouts/layouts.json` in your *working tree* only. Its generated map folders and layout header are ignored by Git. Once the ROM is built you may restore the two tracked JSON files with `git restore data/maps/map_groups.json data/layouts/layouts.json`, but rerun `make e3` before any future rebuild.
