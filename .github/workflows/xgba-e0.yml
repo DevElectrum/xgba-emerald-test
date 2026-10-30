@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - xgba/e0-expanded-layout
+    paths-ignore:
+      - '**/*.md'
+      - AGENTS.md
   pull_request:
     branches:
       - master
