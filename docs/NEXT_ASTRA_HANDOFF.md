@@ -1,7 +1,7 @@
 # XGBA Emerald experiment: living Astra handoff
 
 Updated: 2026-10-30
-Status: E1 accepted in user gameplay. E2 independent second-Hoenn network is implemented on xgba/e2-hoenn-network and undergoing automated validation; not yet accepted in gameplay.
+Status: E1 fully accepted in user gameplay. **E2 static build, generated map-link checks, and 64 MiB expanded-ROM byte verification PASSED** in Actions #41027163879. E2 actual navigation and save/reload are still awaiting user gameplay verification.
 
 ## Read this first
 
@@ -64,6 +64,14 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - Emulator fix in progress on `DevElectrum/xgba` branch `xgba/p1-fast-forward`: removes software and OpenGL renderer VSync and prioritizes the hold-Tab turbo key; verify CI and actual measured speed on Nyx before saying fixed.
 - Primary emulator handoff: https://github.com/DevElectrum/xgba/blob/xgba/p1-fast-forward/docs/NEXT_ASTRA_HANDOFF.md
 
+## E2 verified CI milestone (2026-10-30)
+
+- [GitHub Actions run 41027163879](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41027163879): SUCCESS, every workflow step passed. Generator produced **518 cloned maps, 34 new groups, 441 cloned layouts, 1,313 processed warp entries, 148 route connections and zero unresolved links**.
+- The ROM packer built exact **67,108,864 bytes (64 MiB)**, preserved E1 two map layouts and relocated **882 separate border/map payloads** beyond the 32 MiB boundary. World Two payloads begin at file offset 0x02002000 / XGBA CPU 0x12002000, with asset payload end offset 0x020A1668. ELF symbols for Xgba2_LittlerootTown_Layout and Xgba2_Route101_Layout were confirmed in CI.
+- Initial CI run #41026760064 failed *after successful Emerald compilation* because unused contest-room layout placeholders don't have tile bytes matching their declared 1x1 dimensions. Fixed in commit 52e1ef85496dd06ee936282080bf186514b6e340: accept even-byte source tile arrays but continue checking ELF symbols, linked source bytes and relocated bytes exactly. The rerun passed.
+- E2 draft PR #3: https://github.com/DevElectrum/xgba-emerald-test/pull/3 (targets accepted E1 branch). Keep draft until user gameplay confirms traversable World Two, door exits and save/load.
+- **User has not yet performed E2 gameplay test**, so avoid claims that World Two route navigation/save reload work. Existing E1 evidence is only for test town.
+- Local: checkout xgba/e2-hoenn-network; run make e2 (generator -> Emerald compiler -> E2 pack -> verify); then launch xgba-emerald-e2.gba in Qt XGBA. Portal at E1 Test Town second scientist (16,12) goes to E2 Littleroot. Detailed sequence: docs/XGBA_E2_README.md.
 ## E2 second-Hoenn implementation underway (2026-10-30)
 
 - Branch: xgba/e2-hoenn-network based on accepted E1 branch xgba/e1-independent-map. Never modify Grand Anthology or master for this work.
