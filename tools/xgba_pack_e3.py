@@ -13,44 +13,6 @@ WORLD_LAST = 20
 
 
 
-def marker_cells(source):
-    """Pick five nearby tiles with the same ground elevation and collision bits."""
-    tile_a = source[(9 * 20 + 1) * 2:(9 * 20 + 1) * 2 + 2]
-    tile_b = source[(12 * 20 + 9) * 2:(12 * 20 + 9) * 2 + 2]
-    if tile_a == tile_b:
-        raise ValueError("World marker needs two distinct ground metatiles")
-
-    attribute_mask = 0xFC00
-    attributes = int.from_bytes(tile_a, "little") & attribute_mask
-    if (int.from_bytes(tile_b, "little") & attribute_mask) != attributes:
-        raise ValueError("Marker tile variants must have matching collision and elevation")
-
-    slots = []
-    for y in (12, 11, 10, 9, 8):
-        for x in range(6, 13):
-            position = (y * 20 + x) * 2
-            original = source[position:position + 2]
-            if (int.from_bytes(original, "little") & attribute_mask) != attributes:
-                continue
-            replacement = tile_a if original != tile_a else tile_b
-            slots.append((position, replacement))
-            if len(slots) == 5:
-                return slots
-    raise ValueError("Not enough matching-attribute ground tiles for five world bits")
-
-
-def world_marker(source, world):
-    """Encode World 3..20 without changing metatile collision or elevation."""
-    if len(source) != 20 * 20 * 2:
-        raise ValueError("Unexpected cloned Littleroot dimensions")
-    if not 3 <= world <= 20:
-        raise ValueError(f"Invalid world for marker: {world}")
-
-    result = bytearray(source)
-    for bit, (position, replacement) in enumerate(marker_cells(source)):
-        if (world - 2) & (1 << bit):
-            result[position:position + 2] = replacement
-    return bytes(result)
 
 def plan(args):
     prefix, existing, used = e2.plan(args)
@@ -70,8 +32,6 @@ def plan(args):
                 source = (generator.ROOT / layout[source_key]).read_bytes()
                 if source != expected:
                     raise ValueError(f"World {world} input changed: {layout['name']}")
-                if layout["name"] == "Xgba2_LittlerootTown_Layout" and source_key == "blockdata_filepath":
-                    source = world_marker(source, world)
                 payloads.append((base + relative, source))
     expected_count = len(existing) + (WORLD_LAST - WORLD_FIRST + 1) * 441 * 2
     if len(payloads) != expected_count:
