@@ -50,6 +50,13 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - A dedicated `.github/workflows/xgba-e0.yml` builds and validates E0; docs-only pushes should skip unnecessary CI once path-filter change applies.
 - Read `docs/XGBA_E0_README.md` for exact local build/verify commands.
 
+## Local Nyx/P​​op!_OS validation reported by user (2026-10-30)
+
+- User locally executed a normal `pokeemerald` build and `tools/xgba_pack_emerald.py pack` / `verify` in `~/Projects/xgba-emerald-test`.
+- The pasted console output shows successfully generated `pokeemerald.gba`, `pokeemerald.elf` and `xgba-emerald-e0.gba`. The packer wrote exactly **67,108,864** bytes and printed `Verified XGBA Emerald` twice, confirming Littleroot map data relocated to `0x12000000`.
+- Conventional Emerald ROM linker footprint was **14,929,764 bytes**, as also seen in CI. This confirms build/ROM integrity on the user's machine, **not** gameplay.
+- The remaining E0 gate is launch of **the XGBA validation branch's SDL frontend**, not regular mGBA, and verifying the game from intro through Littleroot, warps, events, save and reload.
+
 ## Immediate next three steps
 
 1. Recheck latest `xgba/e0-expanded-layout` branch and the newest CI run after any code change, and keep E0 PR draft.
