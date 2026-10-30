@@ -1,7 +1,7 @@
 # XGBA Emerald experiment: living Astra handoff
 
 Updated: 2026-10-30
-Status: E0 implementation in progress. **Do not claim a playable expanded Emerald ROM until CI and an interactive XGBA test confirm it.**
+Status: **E0 static build and ROM-integrity checks PASSED** in [GitHub Actions #1](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41017521459). **Interactive XGBA gameplay has NOT been tested.**
 
 ## Read this first
 
@@ -39,6 +39,22 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - Use `XGBA256` marker and refresh GBA header complement at `0xBD`; verify a 64 MiB exact output.
 - Note: `pret/pokeemerald` has 518 map definitions, 441 layouts, and 34 groups. 20 copies of raw tile-layout data would consume ~12.4 MiB; asset stress and true 256 MiB access are separate goals.
 - Map group/number are byte-sized; for twenty complete worlds, likely add a separate world ID and dynamic map resolution instead of multiplying 34 groups by 20.
+
+## Verified on 2026-10-30
+
+- Working branch `xgba/e0-expanded-layout`; initial tooling commit `b38f7bd45226f95b8b47423dda47c8c72ffb476e`.
+- [Actions run #1](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41017521459): **SUCCESS**; toolchain installation, original Emerald compilation, Python syntax check, 64 MiB XGBA packer, static ROM-integrity re-verification, and size checks all passed.
+- Build logged ordinary Emerald ROM usage `14,929,764` bytes before expansion, within the 32 MiB conventional address space.
+- Generated XGBA test ROM: `67,108,864` bytes (64 MiB); Littleroot tile-layout pointer `0x12000000`; payload `800` bytes; original file untouched. This ROM was generated on CI runner and deliberately **not** uploaded as an artifact or committed.
+- Build is a static mapping proof, **not** proof that the emulator can boot Emerald or render the map on screen.
+- A dedicated `.github/workflows/xgba-e0.yml` builds and validates E0; docs-only pushes should skip unnecessary CI once path-filter change applies.
+- Read `docs/XGBA_E0_README.md` for exact local build/verify commands.
+
+## Immediate next three steps
+
+1. Recheck latest `xgba/e0-expanded-layout` branch and the newest CI run after any code change, and keep E0 PR draft.
+2. On Nyx, build the expanded ROM locally from this branch and launch in **XGBA** (not ordinary mGBA). Confirm game start, entry into Littleroot, movement, warps/events, save and reload. Treat as **human/manual test** until actually performed.
+3. After manual E0 proof, implement a second independently addressable test map and a warp between original and clone. Do not start 20 Hoenns or PC expansion before this gate.
 
 ## E0 work and tests
 
