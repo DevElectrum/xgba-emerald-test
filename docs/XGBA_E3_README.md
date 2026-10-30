@@ -32,7 +32,7 @@ The E3 generator changes tracked `data/maps/map_groups.json` and `data/layouts/l
 1. From original Littleroot, use the original scientist to enter XGBA Test Town.
 2. In Test Town, the **new scientist at coordinates (18,12)** is the world selector. Talk repeatedly to cycle destination **World 2 → World 3 → ... → World 20 → World 2**. The dialogue reports the selected numeric world ID.
 3. The existing scientist at **(16,12)** now sends you to the selected world's Littleroot. If no destination was selected, it defaults to World 2.
-4. World 2 through 20 use a shared internal map network. Navigate outside to Route 101 or into houses; return normally. A return scientist in cloned Littleroot at **(14,12)** warps to Test Town without clearing the world selection.
+4. World 2 through 20 use a shared internal map network. In Worlds 3-20, inspect the five-tile marker on Littleroot's ground, encoding the selected world. Navigate to Route 101 or into houses; return normally. The scientist in cloned Littleroot at **(14,12)** reports the active world number and warps to Test Town without clearing the world selection.
 5. For a rigorous test, visit World 3, then World 20, save inside a World 20 interior, quit and relaunch the ROM. Verify that it loads the same world and the selector still reports World 20.
 6. Verify a normal Route 101/Oldale boundary in Worlds 3 and 20. Also check the menu-driven Qt XGBA interface and hold-Tab fast-forward.
 
@@ -40,7 +40,7 @@ The E3 generator changes tracked `data/maps/map_groups.json` and `data/layouts/l
 
 - The geometry is **physically duplicated** in ROM, but the world instances share the same object/event scripts, tilesets, wild encounter logic and persistent flags. Story isolation and per-world progression are **not** part of E3.
 - World 1 uses the ordinary Hoenn map network; Worlds 2 through 20 share E2's map IDs. Therefore checking only the map group/number cannot distinguish Worlds 3-20. Use the persistent world variable.
-- World-specific content is currently identical tile-for-tile; the experiment proves instance routing and ROM addressability, not bespoke visual changes.
+- Each World 3-20 has a **5-tile world ID marker** on cloned Littleroot's ground (row 12, columns 6-10). The marker encodes `world_id - 2` in binary using valid original ground/decorative tiles. This helps verify the runtime selected a distinct physical geometry block. The rest of the geography remains a byte-for-byte copy.
 - Teleport, Fly, script-driven warps and respawn-to-heal-location may bypass the World Two route graph. They remain future tests.
 - E3 automated checks establish build and ROM bytes, **not gameplay success**. Do not mark E3 accepted before user tests the selector, world traversal, and save/reload.
 
