@@ -64,6 +64,14 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - Emulator fix in progress on `DevElectrum/xgba` branch `xgba/p1-fast-forward`: removes software and OpenGL renderer VSync and prioritizes the hold-Tab turbo key; verify CI and actual measured speed on Nyx before saying fixed.
 - Primary emulator handoff: https://github.com/DevElectrum/xgba/blob/xgba/p1-fast-forward/docs/NEXT_ASTRA_HANDOFF.md
 
+## E3 marker fix validated in CI (2026-10-30)
+
+- Initial post-failure marker correction `b8611d...` was also too restrictive: CI #41031616416 failed with `Could not locate five unchanged matching-ground tiles for world marker`.
+- **Working fix** `633d5e4d0578035804e6b65491ba9c57e256fca7` chooses five positions whose source tile shares the same high six bits (elevation/collision mask `0xFC00`) as the safe metatile variants, rather than requiring any specific exact tile value. Each set bit changes only a source tile's low metatile index; unset bits preserve the original. The variants are sampled from the existing Littleroot layout.
+- **Full E3 CI #41032096903 PASSED** this marker code: normal Emerald compilation, full 64 MiB E3 pack and verification, 16,760 expanded-ROM tile/border payloads and 20 world entries, with the final World 20 data ending at `0x0359F668`. https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41032096903 .
+- Added `tools/xgba_test_e3_marker.py` in `ab5b8e4766f203bbcdc37e64ccf3b3d392f28430`, and inserted an automatic marker preflight before full compilation in Makefile commit `c0181a5ea1138ce7c40fb4d7f9f674ce0514138f`. The preflight itself needs green CI confirmation; check https://github.com/DevElectrum/xgba-emerald-test/actions/workflows/xgba-e3.yml .
+- Local recovery for user: `cd ~/Projects/xgba-emerald-test && git pull --ff-only origin xgba/e3-20-worlds && make e3`. The previous failed packer created no E3 ROM, so there is normally nothing to delete. Expected ROM: `xgba-emerald-e3.gba` 67,108,864 bytes.
+- Still need user to confirm Worlds 3/20 selection, route transitions, building exits, and save/restart/reload. Do not claim 20-world runtime gameplay accepted from CI alone.
 ## E3 marker failure on Nyx, corrective fix (2026-10-30)
 
 - User ran `make e3` on `xgba/e3-20-worlds`. **Emerald compilation/linking passed** (EWRAM 249,776 bytes, IWRAM 30,892 bytes). `tools/xgba_pack_e3.py pack` then raised `ValueError: World marker would overwrite a non-ground tile` inside `world_marker()` after assuming five fixed positions in cloned Littleroot had identical ground tiles.
