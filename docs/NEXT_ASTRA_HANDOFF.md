@@ -1,13 +1,13 @@
 # XGBA Emerald experiment: living Astra handoff
 
 Updated: 2026-10-30
-Status: **E1 ACCEPTED by user gameplay test (2026-10-30)**. Both map layouts and custom NPC scripts work; user confirms return portal and save/quit/reopen/load in the independently addressed XGBA Test Town. CI 41024989544 and 41024989681 passed. Next: E2 duplicate the Hoenn map network in an isolated new branch, with its own world-identity design.
+Status: E1 accepted. **E2 core proof accepted (2026-10-30):** static build and 64 MiB ROM verification passed; user confirmed rendering, save/exit/restart/reload within World Two, and repeatedly verified World Two house, Pokémon Center and Poké Mart entrance/exit warps stay in World Two. Outdoor route-boundary traversal and exhaustive 518-map coverage are not yet separately confirmed; story and other world state remain intentionally shared/neutral.
 
 ## Read this first
 
 - Canonical ROM test repo: `DevElectrum/xgba-emerald-test`; https://github.com/DevElectrum/xgba-emerald-test
 - The upstream fork source is `pret/pokeemerald`, default branch `master`. Preserve upstream licensing, history and attribution.
-- Experimental working branch: `xgba/e0-expanded-layout`; keep fork's `master` unmodified during experimentation.
+- Current experimental working branch: `xgba/e2-hoenn-network` (draft PR #3), derived from accepted `xgba/e1-independent-map` and `xgba/e0-expanded-layout`; keep fork's `master` unmodified.
 - Emulator repo: `DevElectrum/xgba`. The verified P0 core branch is `xgba/p0-validation-20261030`; initial emulator validation draft PR #2: https://github.com/DevElectrum/xgba/pull/2
 - Emulator validation details: https://github.com/DevElectrum/xgba/blob/xgba/p0-validation-20261030/docs/XGBA_P0_VALIDATION_2026-10-30.md
 - **NEVER edit `DevElectrum/grand-anthology`** in this experiment.
@@ -64,6 +64,48 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - Emulator fix in progress on `DevElectrum/xgba` branch `xgba/p1-fast-forward`: removes software and OpenGL renderer VSync and prioritizes the hold-Tab turbo key; verify CI and actual measured speed on Nyx before saying fixed.
 - Primary emulator handoff: https://github.com/DevElectrum/xgba/blob/xgba/p1-fast-forward/docs/NEXT_ASTRA_HANDOFF.md
 
+## E2 World Two door routing CONFIRMED by user (2026-10-30)
+
+- User explicitly states they tested **multiple times** that houses, **Pokémon Centers** and **Poké Marts** entered in Hoenn World Two return to **Hoenn World Two**, never original Hoenn.
+- Combined with prior screenshot and user report of save/quit/restart/reload still in World Two, this closes the **core E2 proof**: an independently indexed map network, native interior warp isolation, and persistent map location work in real XGBA gameplay.
+- Static verification passed in [Actions #41027163879](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41027163879) for 518 clones, 441 cloned layouts, 1,313 processed warp entries, 148 route connections, and exact 64 MiB ROM output.
+- **Not yet individually reported**: crossing outdoor route boundaries, visiting every one of the 518 maps, scripted teleport behavior, world-isolated story flags, trainer progression, or encounters. Do not equate core E2 proof with 100% second-world gameplay compatibility.
+- Next architecture milestone E3: use a separate world/instance identifier and dynamic map resolution for a prospective 20 Hoenn worlds. Native map group IDs are byte-sized; 20 × 34 groups exceeds that representation. Maintain all user-verified E1/E2 branches and never touch Grand Anthology.
+
+## E2 real-game save persistence proof (2026-10-30)
+
+- User posted an mGBA/XGBA screenshot showing a rendered outdoor World Two Hoenn town after saving, closing, restarting, and reloading, explicitly reporting **'spawned in hoenn 2 after save and restart'**.
+- **Confirmed by user**: World Two save-location identity persists across an emulator restart and the loaded town renders successfully. This is a crucial persistence milestone beyond E1's isolated test town. Screenshot is conversation evidence, not copied into the public repository.
+- **Previously confirmed by CI**: 518 cloned map definitions / 34 new map groups / 441 cloned layouts, 1,313 static warp entries / 148 route connections remapped, no unresolved destinations, 64 MiB packed image with relocated layout/border bytes (Actions run #41027163879).
+- **Subsequently verified by user**: World Two house, Pokémon Center, and Poké Mart doorways return to World Two, tested repeatedly. **Still to verify explicitly:** crossing outdoor route boundaries and the return portal from World Two Littleroot.
+- E2 **core geography, interior routing and location-persistence proof is accepted**. Outdoor route-boundary checks remain an optional follow-up for broader network acceptance. Do not claim separate per-world plot flags, encounter tables or trainer state: the current E2 maps intentionally share game-wide progress and suppress story events.
+## E2 verified CI milestone (2026-10-30)
+
+- [GitHub Actions run 41027163879](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41027163879): SUCCESS, every workflow step passed. Generator produced **518 cloned maps, 34 new groups, 441 cloned layouts, 1,313 processed warp entries, 148 route connections and zero unresolved links**.
+- The ROM packer built exact **67,108,864 bytes (64 MiB)**, preserved E1 two map layouts and relocated **882 separate border/map payloads** beyond the 32 MiB boundary. World Two payloads begin at file offset 0x02002000 / XGBA CPU 0x12002000, with asset payload end offset 0x020A1668. ELF symbols for Xgba2_LittlerootTown_Layout and Xgba2_Route101_Layout were confirmed in CI.
+- Initial CI run #41026760064 failed *after successful Emerald compilation* because unused contest-room layout placeholders don't have tile bytes matching their declared 1x1 dimensions. Fixed in commit 52e1ef85496dd06ee936282080bf186514b6e340: accept even-byte source tile arrays but continue checking ELF symbols, linked source bytes and relocated bytes exactly. The rerun passed.
+- E2 draft PR #3: https://github.com/DevElectrum/xgba-emerald-test/pull/3 (targets accepted E1 branch). Keep draft until user gameplay confirms traversable World Two, door exits and save/load.
+- **User has not yet performed E2 gameplay test**, so avoid claims that World Two route navigation/save reload work. Existing E1 evidence is only for test town.
+- Local: checkout xgba/e2-hoenn-network; run make e2 (generator -> Emerald compiler -> E2 pack -> verify); then launch xgba-emerald-e2.gba in Qt XGBA. Portal at E1 Test Town second scientist (16,12) goes to E2 Littleroot. Detailed sequence: docs/XGBA_E2_README.md.
+## E2 second-Hoenn implementation underway (2026-10-30)
+
+- Branch: xgba/e2-hoenn-network based on accepted E1 branch xgba/e1-independent-map. Never modify Grand Anthology or master for this work.
+- tools/xgba_generate_e2.py derives a second map network from original source JSON, appending 34 map groups and 441 layout descriptors and generating map JSON under ignored data/maps/Xgba2_*/ directories. All ordinary connection and warp destinations within original Hoenn are rewritten to cloned IDs. Unexpected unmapped links fail fast; special MAP_UNDEFINED/MAP_DYNAMIC are preserved as exceptions.
+- World Two maps use a shared neutral map script, no NPC story objects/coordinate scripts, preserving geometry and standard door/route transitions only. User should not assume script-triggered transitions, wild encounters, story or independent progression are implemented.
+- Portal chain: Original Littleroot scientist (14,12) -> E1 Test Town, second Test Town scientist (16,12) -> E2 Littleroot (13,12), E2 return scientist (14,12) -> E1 Test Town (15,12).
+- tools/xgba_pack_e2.py builds 64 MiB tagged XGBA ROM, relocates E1 pair plus 441 cloned map and border asset pairs to 0x12002000 onwards, verifies ELF pointers and byte payloads. Intended target: xgba-emerald-e2.gba.
+- Makefile adds make e2 (generate -> compile -> pack -> verify). CI workflow .github/workflows/xgba-e2.yml and user guide docs/XGBA_E2_README.md added.
+- Generation deliberately modifies tracked data/maps/map_groups.json and data/layouts/layouts.json in **local** working tree. Do not commit generated groups/layouts/map files; README explains restoring tracked files after building. Ignore generated map folders; output ROM must never be uploaded or committed.
+- Important architecture: groups 34 original +34 E2 =68 (<256). Native group ID is 8-bit; twenty Hoenn copies will not fit 680 groups. Later add explicit world ID and map router.
+- Status at creation of this handoff entry: E2 fresh CI compile still running; **do not claim E2 build or gameplay passed** without CI result and user's manual portal/warp/save tests.
+- Build CI: https://github.com/DevElectrum/xgba-emerald-test/actions/workflows/xgba-e2.yml . User run instructions: https://github.com/DevElectrum/xgba-emerald-test/blob/xgba/e2-hoenn-network/docs/XGBA_E2_README.md
+
+### Current E2 acceptance checklist
+
+1. Generate all E2 maps without any unresolved map links; compile a normal Emerald executable under 32 MiB, link cloned maps and pointers.
+2. Build and statically verify exactly 64 MiB E2 ROM with 441 relocated map layouts and borders, plus E1 payloads.
+3. User navigates Test Town portal to World Two Littleroot, north to World Two Route101 and Oldale, enters/exits a house, returns through portal and saves/reloads in World Two.
+4. If any step fails, fix E2 branch only, rerun CI and update this handoff, keeping accepted E1 intact.
 ## E1 final acceptance: user confirmed (2026-10-30)
 
 **All critical E1 gates are confirmed complete.** After the screenshot established new map rendering and custom witness NPC dialogue, user explicitly confirmed:

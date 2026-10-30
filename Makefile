@@ -159,7 +159,7 @@ MAKEFLAGS += --no-print-directory
 # Delete files that weren't built properly
 .DELETE_ON_ERROR:
 
-RULES_NO_SCAN += libagbsyscall clean clean-assets tidy tidymodern tidynonmodern generated clean-generated
+RULES_NO_SCAN += libagbsyscall clean clean-assets tidy tidymodern tidynonmodern generated clean-generated e2
 .PHONY: all rom modern compare
 .PHONY: $(RULES_NO_SCAN)
 
@@ -396,3 +396,11 @@ $(ROM): $(ELF)
 # Symbol file (`make syms`)
 $(SYM): $(ELF)
 	$(OBJDUMP) -t $< | sort -u | grep -E "^0[2389]" | $(PERL) -p -e 's/^(\w{8}) (\w).{6} \S+\t(\w{8}) (\S+)$$/\1 \2 \3 \4/g' > $@
+
+
+.PHONY: e2
+e2:
+	python3 tools/xgba_generate_e2.py
+	$(MAKE) -j2 all
+	python3 tools/xgba_pack_e2.py pack
+	python3 tools/xgba_pack_e2.py verify
