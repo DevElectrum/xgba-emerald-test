@@ -1,0 +1,73 @@
+name: XGBA Emerald E2 second Hoenn
+
+on:
+  push:
+    branches:
+      - xgba/e2-hoenn-network
+    paths-ignore:
+      - '**/*.md'
+      - AGENTS.md
+  pull_request:
+    branches:
+      - xgba/e1-independent-map
+
+permissions:
+  contents: read
+
+jobs:
+  two-hoenn-networks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out Emerald fork
+        uses: actions/checkout@v4
+
+      - name: Check out agbcc toolchain
+        uses: actions/checkout@v4
+        with:
+          repository: pret/agbcc
+          path: agbcc
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi libpng-dev
+
+      - name: Install agbcc
+        working-directory: agbcc
+        run: |
+          ./build.sh
+          ./install.sh ../
+
+      - name: Validate generator and packer syntax
+        run: python3 -m py_compile tools/xgba_generate_e2.py tools/xgba_pack_e2.py
+
+      - name: Generate, compile and verify E2 64 MiB cartridge
+        run: make e2
+
+      - name: Check map network and build metadata
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          m = json.loads(Path("build/xgba-e2-manifest.json").read_text())
+          assert m["original_group_count"] == 34, m
+          assert m["clone_group_count"] == 34, m
+          assert m["cloned_layout_count"] == 441, m
+          assert m["expected_total_groups"] == 68, m
+          assert m["expected_total_layouts"] == 883, m
+          assert m["unresolved_links"] == 0, m
+          assert m["remapped_warp_count"] > 0, m
+          assert m["remapped_connection_count"] > 0, m
+          assert Path("xgba-emerald-e2.gba").stat().st_size == 67108864
+          print(m)
+          PY
+
+      - name: Confirm output contains independently compiled World Two layouts
+        run: |
+          arm-none-eabi-nm --defined-only pokeemerald.elf | \
+            grep -E ' Xgba2_LittlerootTown_Layout$'
+          arm-none-eabi-nm --defined-only pokeemerald.elf | \
+            grep -E ' Xgba2_Route101_Layout$'
+
+      # Generated ROMs are not uploaded as GitHub Actions artifacts.
