@@ -1,7 +1,7 @@
 # XGBA Emerald experiment: living Astra handoff
 
 Updated: 2026-10-30
-Status: E1 accepted, E2 core geography/indoor warp/persistence accepted by user. **E3 twenty-world geometry selector is implemented on xgba/e3-20-worlds but CI and actual game testing are still pending.**
+Status: E1 and E2 core tests accepted by user. **E3 20-world ROM construction PASSED** on [GitHub Actions #41029580141](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41029580141). Gameplay in Worlds 3-20, selector, and save/reload are NOT yet confirmed.
 
 ## Read this first
 
@@ -64,6 +64,13 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - Emulator fix in progress on `DevElectrum/xgba` branch `xgba/p1-fast-forward`: removes software and OpenGL renderer VSync and prioritizes the hold-Tab turbo key; verify CI and actual measured speed on Nyx before saying fixed.
 - Primary emulator handoff: https://github.com/DevElectrum/xgba/blob/xgba/p1-fast-forward/docs/NEXT_ASTRA_HANDOFF.md
 
+## E3 successful CI evidence (2026-10-30)
+
+- Clean [GitHub Actions run #41029580141](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41029580141) **PASSED every step**: tools syntax, generator, Emerald compile, full 64 MiB pack, independent verify and 20-instance manifest assertions.
+- Manifest confirms World 1 original Hoenn + World 2 E2 shared network + **18 additional physical world payload sets**. Each of Worlds 3-20 has 441 distinct layout entries, 882 tile/border assets, **652,904 bytes of physical geometry**, fixed 1 MiB block stride.
+- Verified generated cartridge size **67,108,864 bytes**. Last World 20 payload ends at ROM file offset **0x0359F668** (56,227,432), leaving room inside the 64 MiB cartridge. Total E3 check covered **16,760 tile/border payloads**, including E1/E2.
+- The CI build proves the generated and relocated bytes, not that the C runtime pointer selector and in-game world switch work under real XGBA graphics/saving. User's XGBA interactive tests are still needed. Explicitly test selector IDs World 3 and World 20, route borders/interior doors, leave and reenter world, and save/restart/reload.
+- Draft PR #4 is https://github.com/DevElectrum/xgba-emerald-test/pull/4, targeting the E2 experimental branch. Keep draft until user acceptance.
 ## E3 implementation: 20 Hoenn geography instances (2026-10-30)
 
 - New branch: `xgba/e3-20-worlds` based on user-tested E2. Previous E2 map network generation remains intact; no writes to Grand Anthology or master.
@@ -73,7 +80,7 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - In XGBA Test Town, a new scientist NPC at `(18,12)` cycles destination IDs **2 through 20**. Existing destination scientist `(16,12)` now warps into the chosen world and reports number. The E2 return NPC at cloned Littleroot `(14,12)` remains unchanged. Worlds 2..20 share warp graph and story suppression.
 - `make e3` runs E2 map generator, E3 offset generator, Emerald compilation, E3 pack, E3 verify. Dedicated `.github/workflows/xgba-e3.yml` tests on branch pushes; docs/XGBA_E3_README.md describes local commands and portal checks.
 - Important E3 LIMITS: geometry copies, not 20 independent stories or save slots; same encounter/trainer/global flags across worlds, and script/dynamic Fly/Teleport routing isn't redirected. World ID saved in the existing event var; no enlargement of persistent save RAM.
-- At first writing, **E3 clean CI has not finished**: https://github.com/DevElectrum/xgba-emerald-test/actions/workflows/xgba-e3.yml . Do not claim build pass or game acceptance without evidence.
+- E3 **static clean CI PASSED**: https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41029580141 . Game acceptance is still pending.
 - Immediate next steps: (1) inspect E3 clean CI logs and fix compile/packer failures, (2) produce xgba-emerald-e3.gba locally with `make e3`, (3) user visits Worlds 3 and 20, tests interior/route transitions, save-restart-reload and Tab/Qt.
 ## E2 World Two door routing CONFIRMED by user (2026-10-30)
 
