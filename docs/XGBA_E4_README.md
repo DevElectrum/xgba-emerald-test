@@ -17,6 +17,10 @@ The 384 bytes store a 4-byte version/magic value, 20 worlds × 16 bytes each, pl
 - The **existing E3 `VAR_XGBA_WORLD_ID`** at 0x40FF selects the active bank. Values 2-20 map to records 1-19; values 0/1 select original World's record 0. World index is read directly from the old global vars array to avoid recursive access.
 - Event semantics outside these four variables and 48 flags remain ordinary Emerald global state. No more RAM/flash sectors are consumed.
 
+## Accepted interactive proof (user-tested October 30, 2026)
+
+**PASS.** In the same E4 save, the user confirmed World 20 **3/SET** and World 3 **1/SET** survive independent switching, normal saving, a complete XGBA restart, and reloading. This proves the event-bank prototype persists world-specific flags and variables, not entire Emerald progression.
+
 ## Interactive proof
 
 In every cloned Littleroot (Worlds 2-20) there are now **three NPCs near the central area**: return scientist at (14,12), counter researcher at (16,12), and flag/counter auditor at (18,12).
