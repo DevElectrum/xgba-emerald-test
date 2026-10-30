@@ -81,6 +81,18 @@ class E5SaveTests(unittest.TestCase):
                 e5.atomic_write(target, b"bad")
             self.assertEqual(target.read_bytes(), self.save)
 
+    def test_rtc_trailer_survives_legacy_migration_and_world_writes(self):
+        trailer = bytes(range(e5.RTC_TRAILER_SIZE))
+        extended = e5.initialize(self.native + trailer)
+        self.assertEqual(len(extended), e5.FILE_SIZE + e5.RTC_TRAILER_SIZE)
+        self.assertEqual(extended[:e5.NATIVE_SIZE], self.native)
+        self.assertEqual(extended[e5.FILE_SIZE:], trailer)
+        self.assertTrue(e5.validate(extended))
+        modified = e5.write_world(extended, 20, b"RTC persists")
+        self.assertEqual(modified[e5.FILE_SIZE:], trailer)
+        self.assertEqual(modified[:e5.NATIVE_SIZE], self.native)
+        self.assertEqual(e5.read_world(modified, 20)[2], b"RTC persists")
+
     def test_maximum_payload_roundtrip(self):
         payload = bytes([i % 239 for i in range(e5.MAX_WORLD_DATA)])
         saved = e5.write_world(self.save, 1, payload)
