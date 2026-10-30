@@ -1,0 +1,31 @@
+name: XGBA E5 extended save format proof
+
+on:
+  push:
+    branches:
+      - xgba/e5-expanded-save
+    paths:
+      - tools/xgba_e5_save.py
+      - tests/test_xgba_e5_save.py
+      - .github/workflows/xgba-e5.yml
+  pull_request:
+    branches:
+      - xgba/e4-world-state
+    paths:
+      - tools/xgba_e5_save.py
+      - tests/test_xgba_e5_save.py
+      - .github/workflows/xgba-e5.yml
+
+permissions:
+  contents: read
+
+jobs:
+  extended-save-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test E5 format, copy isolation and corruption recovery
+        run: python3 -m unittest discover -s tests -p 'test_xgba_e5_save.py' -v
+      - name: Validate Python source
+        run: python3 -m py_compile tools/xgba_e5_save.py tests/test_xgba_e5_save.py
