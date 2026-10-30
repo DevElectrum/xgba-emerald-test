@@ -13,6 +13,7 @@ import zlib
 
 NATIVE_SIZE = 128 * 1024
 FILE_SIZE = 1024 * 1024
+RTC_TRAILER_SIZE = 16
 HEADER_SIZE = 4096
 PRIMARY_HEADER = NATIVE_SIZE
 SECONDARY_HEADER = FILE_SIZE - HEADER_SIZE
@@ -54,19 +55,19 @@ def build_superblock():
 
 
 def initialize(native_data):
-    if len(native_data) != NATIVE_SIZE:
-        raise E5SaveError("Input must be exactly 128 KiB of native Emerald save bytes")
+    if len(native_data) not in (NATIVE_SIZE, NATIVE_SIZE + RTC_TRAILER_SIZE):
+        raise E5SaveError("Input must contain 128 KiB native save plus optional 16-byte RTC trailer")
     save = bytearray(b"\xFF" * FILE_SIZE)
-    save[:NATIVE_SIZE] = native_data
+    save[:NATIVE_SIZE] = native_data[:NATIVE_SIZE]
     header = build_superblock()
     save[PRIMARY_HEADER:PRIMARY_HEADER + HEADER_SIZE] = header
     save[SECONDARY_HEADER:SECONDARY_HEADER + HEADER_SIZE] = header
-    return bytes(save)
+    return bytes(save) + native_data[NATIVE_SIZE:]
 
 
 def validate(save):
-    if len(save) != FILE_SIZE:
-        raise E5SaveError("E5 file must be exactly 1 MiB")
+    if len(save) not in (FILE_SIZE, FILE_SIZE + RTC_TRAILER_SIZE):
+        raise E5SaveError("E5 file must be 1 MiB plus optional 16-byte RTC trailer")
 
     valid = False
     expected = build_superblock()[:HEADER.size]
@@ -225,7 +226,7 @@ def main():
     elif args.command == "extract-native":
         save = args.save.read_bytes()
         validate(save)
-        atomic_write(args.output, save[:NATIVE_SIZE])
+        atomic_write(args.output, save[:NATIVE_SIZE] + save[FILE_SIZE:])
 
 
 if __name__ == "__main__":
