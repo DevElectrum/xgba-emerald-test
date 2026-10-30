@@ -45,6 +45,11 @@ jobs:
           ./install.sh ../
         working-directory: agbcc
 
+      - name: Generate E3's second-Hoenn maps and world-layout lookup
+        run: |
+          python3 tools/xgba_generate_e2.py
+          python3 tools/xgba_generate_e3.py
+
       - name: Build modified Emerald
         run: make -j${nproc} all syms
 
