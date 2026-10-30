@@ -45,6 +45,7 @@ XgbaTestTown_EventScript_EnterSelectedWorld:
 Xgba2Littleroot_EventScript_Return::
 	lock
 	faceplayer
+	buffernumberstring STR_VAR_1, VAR_XGBA_WORLD_ID
 	msgbox Xgba2Littleroot_Text_Return, MSGBOX_DEFAULT
 	closemessage
 	warp MAP_XGBA_TEST_TOWN, 15, 12
@@ -57,8 +58,8 @@ XgbaTestTown_Text_ToHoenn2:
 	.string "Destination: WORLD {STR_VAR_1}!$"
 
 Xgba2Littleroot_Text_Return:
-	.string "This Hoenn is an independent\n"
-	.string "map network. Back to the lab!$"
+	.string "World {STR_VAR_1} reporting in!\n"
+	.string "Back to the lab!$"
 
 
 XgbaTestTown_EventScript_NextWorld::
