@@ -1,4 +1,5 @@
 #include "global.h"
+#include "xgba_map_compat.h"
 #include "malloc.h"
 #include "battle.h"
 #include "battle_tower.h"
@@ -65,15 +66,6 @@
 #include "constants/weather.h"
 #include "constants/metatile_labels.h"
 #include "palette.h"
-
-// All 19 cloned Hoenns use original group-local map numbers. Special
-// routines must compare canonical IDs without changing actual warp identity.
-static s16 XgbaCanonicalSpecialGroup(s16 group)
-{
-    if (group >= 34 && group < 68)
-        return group - 34;
-    return group;
-}
 
 #define TAG_ITEM_ICON 5500
 
@@ -272,7 +264,7 @@ u16 GetRecordedCyclingRoadResults(void)
 
 void UpdateCyclingRoadState(void)
 {
-    if (gLastUsedWarp.mapNum == MAP_NUM(MAP_ROUTE110_SEASIDE_CYCLING_ROAD_NORTH_ENTRANCE) && XgbaCanonicalSpecialGroup(gLastUsedWarp.mapGroup) == MAP_GROUP(MAP_ROUTE110_SEASIDE_CYCLING_ROAD_NORTH_ENTRANCE))
+    if (gLastUsedWarp.mapNum == MAP_NUM(MAP_ROUTE110_SEASIDE_CYCLING_ROAD_NORTH_ENTRANCE) && XgbaCanonicalMapGroup(gLastUsedWarp.mapGroup) == MAP_GROUP(MAP_ROUTE110_SEASIDE_CYCLING_ROAD_NORTH_ENTRANCE))
         return;
 
     if (VarGet(VAR_CYCLING_CHALLENGE_STATE) == 2 || VarGet(VAR_CYCLING_CHALLENGE_STATE) == 3)
@@ -1407,7 +1399,7 @@ bool8 Special_AreLeadMonEVsMaxedOut(void)
 u8 TryUpdateRusturfTunnelState(void)
 {
     if (!FlagGet(FLAG_RUSTURF_TUNNEL_OPENED)
-        && XgbaCanonicalSpecialGroup(gSaveBlock1Ptr->location.mapGroup) == MAP_GROUP(MAP_RUSTURF_TUNNEL)
+        && XgbaCanonicalMapGroup(gSaveBlock1Ptr->location.mapGroup) == MAP_GROUP(MAP_RUSTURF_TUNNEL)
         && gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_RUSTURF_TUNNEL))
     {
         if (FlagGet(FLAG_HIDE_RUSTURF_TUNNEL_ROCK_1))
@@ -1671,7 +1663,7 @@ bool8 IsBadEggInParty(void)
 
 bool8 InMultiPartnerRoom(void)
 {
-    if (XgbaCanonicalSpecialGroup(gSaveBlock1Ptr->location.mapGroup) == MAP_GROUP(MAP_BATTLE_FRONTIER_BATTLE_TOWER_MULTI_PARTNER_ROOM)
+    if (XgbaCanonicalMapGroup(gSaveBlock1Ptr->location.mapGroup) == MAP_GROUP(MAP_BATTLE_FRONTIER_BATTLE_TOWER_MULTI_PARTNER_ROOM)
         && gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_BATTLE_FRONTIER_BATTLE_TOWER_MULTI_PARTNER_ROOM) &&
         VarGet(VAR_FRONTIER_BATTLE_MODE) == FRONTIER_MODE_MULTIS)
         return TRUE;
@@ -1788,7 +1780,7 @@ u16 GetDeptStoreDefaultFloorChoice(void)
     sLilycoveDeptStore_NeverRead = 0;
     sLilycoveDeptStore_DefaultFloorChoice = 0;
 
-    if (XgbaCanonicalSpecialGroup(gSaveBlock1Ptr->dynamicWarp.mapGroup) == MAP_GROUP(MAP_LILYCOVE_CITY_DEPARTMENT_STORE_1F))
+    if (XgbaCanonicalMapGroup(gSaveBlock1Ptr->dynamicWarp.mapGroup) == MAP_GROUP(MAP_LILYCOVE_CITY_DEPARTMENT_STORE_1F))
     {
         switch (gSaveBlock1Ptr->dynamicWarp.mapNum)
         {
@@ -2040,7 +2032,7 @@ bool8 UsedPokemonCenterWarp(void)
     };
 
     int i;
-    u16 map = (XgbaCanonicalSpecialGroup(gLastUsedWarp.mapGroup) << 8) + gLastUsedWarp.mapNum;
+    u16 map = (XgbaCanonicalMapGroup(gLastUsedWarp.mapGroup) << 8) + gLastUsedWarp.mapNum;
 
     for (i = 0; sPokemonCenters[i] != MAP_UNDEFINED; i++)
     {
@@ -2053,7 +2045,7 @@ bool8 UsedPokemonCenterWarp(void)
 
 bool32 PlayerNotAtTrainerHillEntrance(void)
 {
-    if (XgbaCanonicalSpecialGroup(gSaveBlock1Ptr->location.mapGroup) == MAP_GROUP(MAP_TRAINER_HILL_ENTRANCE) && gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_TRAINER_HILL_ENTRANCE))
+    if (XgbaCanonicalMapGroup(gSaveBlock1Ptr->location.mapGroup) == MAP_GROUP(MAP_TRAINER_HILL_ENTRANCE) && gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_TRAINER_HILL_ENTRANCE))
         return FALSE;
 
     return TRUE;
@@ -3454,7 +3446,7 @@ static void WaitForDeoxysRockMovement(u8 taskId)
 void IncrementBirthIslandRockStepCount(void)
 {
     u16 stepCount = VarGet(VAR_DEOXYS_ROCK_STEP_COUNT);
-    if (gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_BIRTH_ISLAND_EXTERIOR) && XgbaCanonicalSpecialGroup(gSaveBlock1Ptr->location.mapGroup) == MAP_GROUP(MAP_BIRTH_ISLAND_EXTERIOR))
+    if (gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_BIRTH_ISLAND_EXTERIOR) && XgbaCanonicalMapGroup(gSaveBlock1Ptr->location.mapGroup) == MAP_GROUP(MAP_BIRTH_ISLAND_EXTERIOR))
     {
         if (++stepCount > 99)
             VarSet(VAR_DEOXYS_ROCK_STEP_COUNT, 0);
@@ -3607,7 +3599,7 @@ bool8 AbnormalWeatherHasExpired(void)
     if (++steps > 999)
     {
         VarSet(VAR_ABNORMAL_WEATHER_STEP_COUNTER, 0);
-        if (XgbaCanonicalSpecialGroup(gSaveBlock1Ptr->location.mapGroup) == MAP_GROUP(MAP_UNDERWATER_MARINE_CAVE))
+        if (XgbaCanonicalMapGroup(gSaveBlock1Ptr->location.mapGroup) == MAP_GROUP(MAP_UNDERWATER_MARINE_CAVE))
         {
             switch (gSaveBlock1Ptr->location.mapNum)
             {
@@ -3623,7 +3615,7 @@ bool8 AbnormalWeatherHasExpired(void)
             }
         }
 
-        if (XgbaCanonicalSpecialGroup(gSaveBlock1Ptr->location.mapGroup) == MAP_GROUP(MAP_UNDERWATER_ROUTE127))
+        if (XgbaCanonicalMapGroup(gSaveBlock1Ptr->location.mapGroup) == MAP_GROUP(MAP_UNDERWATER_ROUTE127))
         {
             switch (gSaveBlock1Ptr->location.mapNum)
             {
@@ -3639,7 +3631,7 @@ bool8 AbnormalWeatherHasExpired(void)
         }
 
         if (gSaveBlock1Ptr->location.mapNum == sAbnormalWeatherMapNumbers[abnormalWeather - 1] &&
-            XgbaCanonicalSpecialGroup(gSaveBlock1Ptr->location.mapGroup) == 0)
+            XgbaCanonicalMapGroup(gSaveBlock1Ptr->location.mapGroup) == 0)
         {
             return TRUE;
         }
@@ -3683,7 +3675,7 @@ u32 GetMartEmployeeObjectEventId(void)
     u8 i;
     for (i = 0; i < ARRAY_COUNT(sPokeMarts); i++)
     {
-        if (XgbaCanonicalSpecialGroup(gSaveBlock1Ptr->location.mapGroup) == sPokeMarts[i][0])
+        if (XgbaCanonicalMapGroup(gSaveBlock1Ptr->location.mapGroup) == sPokeMarts[i][0])
         {
             if (gSaveBlock1Ptr->location.mapNum == sPokeMarts[i][1])
                 return sPokeMarts[i][2];
@@ -3957,7 +3949,7 @@ void GetBattlePyramidHint(void)
 // Used to avoid a potential softlock if the player respawns on Dewford with no way off
 void ResetHealLocationFromDewford(void)
 {
-    if (XgbaCanonicalSpecialGroup(gSaveBlock1Ptr->lastHealLocation.mapGroup) == MAP_GROUP(MAP_DEWFORD_TOWN) && gSaveBlock1Ptr->lastHealLocation.mapNum == MAP_NUM(MAP_DEWFORD_TOWN))
+    if (XgbaCanonicalMapGroup(gSaveBlock1Ptr->lastHealLocation.mapGroup) == MAP_GROUP(MAP_DEWFORD_TOWN) && gSaveBlock1Ptr->lastHealLocation.mapNum == MAP_NUM(MAP_DEWFORD_TOWN))
         SetLastHealLocationWarp(HEAL_LOCATION_PETALBURG_CITY);
 }
 
@@ -3990,7 +3982,7 @@ bool8 InPokemonCenter(void)
     };
 
     int i;
-    u16 map = (XgbaCanonicalSpecialGroup(gSaveBlock1Ptr->location.mapGroup) << 8) + gSaveBlock1Ptr->location.mapNum;
+    u16 map = (XgbaCanonicalMapGroup(gSaveBlock1Ptr->location.mapGroup) << 8) + gSaveBlock1Ptr->location.mapNum;
 
     for (i = 0; sPokemonCenters[i] != MAP_UNDEFINED; i++)
     {
