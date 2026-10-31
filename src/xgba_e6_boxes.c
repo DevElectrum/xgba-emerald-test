@@ -26,7 +26,7 @@ static const u8 sMetaMagic[8] = {'X', 'G', 'B', 'A', 'E', '6', 'M', 0};
 static const u8 sLegacyMagic[8] = {'X', 'G', 'B', 'A', 'E', '6', 'B', 0};
 
 // In ROM, not EWRAM. Avoid eight bit-by-bit CRC rounds per stored byte.
-static const u32 sCrcTable[256] =
+const u32 gXgbaE6CrcTable[256] =
 {
     0x00000000U, 0x77073096U, 0xEE0E612CU, 0x990951BAU, 0x076DC419U, 0x706AF48FU, 0xE963A535U, 0x9E6495A3U,
     0x0EDB8832U, 0x79DCB8A4U, 0xE0D5E91EU, 0x97D2D988U, 0x09B64C2BU, 0x7EB17CBDU, 0xE7B82D07U, 0x90BF1D91U,
@@ -94,7 +94,7 @@ static void Write32(volatile u8 *p, u32 value)
 
 static u32 UpdateCrc(u32 crc, u8 byte)
 {
-    return sCrcTable[(crc ^ byte) & 0xFF] ^ (crc >> 8);
+    return gXgbaE6CrcTable[(crc ^ byte) & 0xFF] ^ (crc >> 8);
 }
 
 static u32 CrcVolatile(const volatile u8 *p, u32 length)
@@ -346,12 +346,23 @@ bool8 XgbaE6BoxesCanEnterWorld(u8 world)
         return FALSE;
     if (meta == 0)
     {
-        // New/unvisited world is genuinely blank only when both of the old
-        // bank starts, the first v2 page, and the metadata are all erased.
-        return IsUnused(base) && IsUnused(base + 0x44000)
-            && IsUnused(PageRecord(world, 0, 1))
-            && IsUnused(MetaRecord(world, 0))
-            && IsUnused(MetaRecord(world, 1));
+        u8 p;
+        u8 s;
+        // Missing metadata is safe only when the entire world's page headers
+        // are uninitialized. Never erase a partly converted/damaged world.
+        if (!IsUnused(base + 0x44000)
+            || !IsUnused(MetaRecord(world, 0))
+            || !IsUnused(MetaRecord(world, 1)))
+            return FALSE;
+        for (p = 0; p < XGBA_BOX_PAGES; p++)
+        {
+            for (s = 0; s < 2; s++)
+            {
+                if (!IsUnused(PageRecord(world, p, s)))
+                    return FALSE;
+            }
+        }
+        return TRUE;
     }
     record = FindPage(world, page, &pageSlot, &pageSeq, &crc);
     return record == 1;
