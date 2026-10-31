@@ -545,3 +545,5 @@ gSpecials::
 	def_special XgbaE5SpecialAudit
 	def_special XgbaE6SpecialSnapshot
 	def_special XgbaE6SpecialAudit
+	def_special XgbaE6SpecialEnterWorld
+	def_special XgbaE6SpecialLeaveWorld
