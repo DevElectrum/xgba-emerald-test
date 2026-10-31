@@ -2,6 +2,9 @@
 
 ## 2026-10-31: USER FOUND E6 HOENN 20 STORY NPC BUG; PATCH COMMITTED
 
+**CI PASS confirmed:** https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41184903637 for commit `102a0e87`. Both complete Emerald E6 ROM build and E6 Python save-format checks passed with the Route101/rival-house callback restoration and scripted-warp redirection. Runtime behavior remains unverified until user tests the patched ROM. Existing `xgba-emerald-e6.sav` should be preserved and reused, no migration needed.
+
+
 - Screenshot of Route 101 World 20 shows Professor Birch and Zigzagoon visible, bag nearby, but Birch does not talk; user also reports child in May's house walking outside right-hand wall. This is **NOT** intended gameplay. Root cause from source: E6 bulk restoration `f09e785c` only copied normal `object_events` and background interactions while intentionally zeroing `coord_events` and assigning `shared_scripts_map = Xgba2Neutral`. Birch's rescue actor has `script: "0x0"` in the original and normally depends on `Route101_OnTransition` plus coordinate trigger `Route101_EventScript_StartBirchRescue`; it cannot be started by talking directly to Birch.
 - **Patch 1** `077c6aae`: `tools/xgba_generate_e2.py` now restores native map scripts + coordinate events specifically for `Route101`, `LittlerootTown_MaysHouse_1F`, and `LittlerootTown_BrendansHouse_1F`. The May rival sibling's wandering movement was changed to fixed face-down to avoid clipping near east wall. This does NOT globally restore story scripts throughout Hoenn.
 - **Patch 2** `102a0e87`: `src/overworld.c:SetWarpDestination` now redirects original Hoenn story-script destinations to clone map groups (+34) only when the *current map* is a cloned group and world selector is 2–20. It excludes `MAP_XGBA_TEST_TOWN` to allow exiting to the lab. Original groups number 0..33, cloned groups 34..67. Scripted warps must not accidentally send users to original World 1.
