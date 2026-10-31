@@ -291,7 +291,8 @@ static bool8 XgbaE6PrepareCurrentState(void)
         return FALSE;
     SavePlayerParty();
     SaveObjectEvents();
-    SavePlayerBag();
+    // The live bag pockets already reside inside SaveBlock1. SavePlayerBag()
+    // copies an outdated load-time cache back over the real item quantities.
     return TRUE;
 }
 
@@ -362,7 +363,6 @@ void XgbaE6CheckpointOnSave(void)
         && gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_XGBA_TEST_TOWN))
         return;
 
-    SavePlayerBag();
     XgbaE6SnapshotWorld(world);
 }
 
