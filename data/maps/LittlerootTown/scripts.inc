@@ -965,12 +965,24 @@ LittlerootTown_Text_BirchSomethingToShowYouAtLab:
 LittlerootTown_EventScript_XgbaPortal::
 	lock
 	faceplayer
+	special XgbaE6SpecialLeaveWorldOne
+	compare VAR_RESULT, 1
+	goto_if_eq LittlerootTown_EventScript_XgbaPortalReady
+	msgbox LittlerootTown_Text_XgbaStorageError, MSGBOX_DEFAULT
+	release
+	end
+
+LittlerootTown_EventScript_XgbaPortalReady:
 	msgbox LittlerootTown_Text_XgbaPortal, MSGBOX_DEFAULT
 	closemessage
 	warp MAP_XGBA_TEST_TOWN, 13, 12
 	waitstate
 	release
 	end
+
+LittlerootTown_Text_XgbaStorageError:
+	.string "World 1 could not be saved.\\n"
+	.string "The portal will stay closed.$"
 
 LittlerootTown_Text_XgbaPortal:
 	.string "Let's visit the XGBA test town!\n"

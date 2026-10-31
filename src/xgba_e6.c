@@ -359,6 +359,39 @@ void XgbaE6SpecialEnterWorld(void)
     gSpecialVar_Result = 1;
 }
 
+// Save original Hoenn before its resident state is replaced by a clone.
+void XgbaE6SpecialLeaveWorldOne(void)
+{
+    gSpecialVar_Result = 4;
+    if (XgbaE6CurrentWorld() != 1 || !XgbaE6Available())
+        return;
+    if (!XgbaE6PrepareCurrentState())
+        return;
+    if (!XgbaE6BoxesCheckpointNativeWorldOne())
+        return;
+    if (XgbaE6SnapshotWorld(1))
+        gSpecialVar_Result = 1;
+}
+
+// Restore World 1 instead of reusing the previous clone's resident save.
+void XgbaE6SpecialReturnToWorldOne(void)
+{
+    u8 previousWorld = XgbaE6CurrentWorld();
+
+    gSpecialVar_Result = 4;
+    if (!XgbaE6Available() || XgbaE6AuditWorld(1) != 1
+        || !XgbaE6BoxesCanEnterWorld(1))
+        return;
+    if (!XgbaE6RestoreWorld(1))
+    {
+        if (previousWorld >= 2 && previousWorld <= 20)
+            XgbaE6RestoreWorld(previousWorld);
+        return;
+    }
+    VarSet(VAR_XGBA_WORLD_ID, 1);
+    gSpecialVar_Result = 1;
+}
+
 void XgbaE6SpecialLeaveWorld(void)
 {
     u8 world = XgbaE6CurrentWorld();

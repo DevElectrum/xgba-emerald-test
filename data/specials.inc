@@ -547,3 +547,5 @@ gSpecials::
 	def_special XgbaE6SpecialAudit
 	def_special XgbaE6SpecialEnterWorld
 	def_special XgbaE6SpecialLeaveWorld
+	def_special XgbaE6SpecialLeaveWorldOne
+	def_special XgbaE6SpecialReturnToWorldOne

@@ -4,6 +4,14 @@ XgbaTestTown_MapScripts::
 XgbaTestTown_EventScript_Return::
 	lock
 	faceplayer
+	special XgbaE6SpecialReturnToWorldOne
+	compare VAR_RESULT, 1
+	goto_if_eq XgbaTestTown_EventScript_ReturnReady
+	msgbox XgbaTestTown_Text_WorldStateError, MSGBOX_DEFAULT
+	release
+	end
+
+XgbaTestTown_EventScript_ReturnReady:
 	msgbox XgbaTestTown_Text_Return, MSGBOX_DEFAULT
 	closemessage
 	warp MAP_LITTLEROOT_TOWN, 13, 12

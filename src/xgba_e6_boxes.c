@@ -439,6 +439,44 @@ static bool8 EnsureWorld(u8 world)
     return XgbaE6BoxesEnterWorld(world);
 }
 
+// The native World 1 PC is authoritative when leaving original Hoenn.
+// Never reload an older sidecar page over the current in-RAM storage.
+bool8 XgbaE6BoxesCheckpointNativeWorldOne(void)
+{
+    u8 metaSlot = 0, page = 0, pageSlot = 0;
+    u32 metaSeq = 0, pageSeq = 0, crc = 0;
+    s8 meta;
+    s8 status = 0;
+
+    if (!XgbaE6BoxesCanEnterWorld(1))
+        return FALSE;
+    meta = FindMeta(1, &metaSlot, &page, &metaSeq);
+    if (meta < 0)
+        return FALSE;
+    if (meta == 1)
+    {
+        status = FindPage(1, page, &pageSlot, &pageSeq, &crc);
+        if (status != 1)
+            return FALSE;
+    }
+    sCurrentWorld = 1;
+    sCurrentPage = page;
+    sBoxReady = TRUE;
+    sSavedValid = status == 1;
+    if (status == 1)
+    {
+        sSavedSlot = pageSlot;
+        sSavedSeq = pageSeq;
+        sSavedCrc = crc;
+    }
+    if (!WritePage(1, page) || !WriteMeta(1, page))
+    {
+        sBoxReady = FALSE;
+        return FALSE;
+    }
+    return TRUE;
+}
+
 bool8 XgbaE6BoxesCheckpoint(u8 world)
 {
     if (!EnsureWorld(world))
