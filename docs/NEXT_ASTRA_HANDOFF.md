@@ -1,5 +1,9 @@
 # XGBA Emerald experiment: living Astra handoff
 
+## 2026-10-31: Test Town world selector replaced with a native scrolling menu
+
+User asked to replace the repetitive (18,12) world-ID cycling NPC (World 2 through World 20) with a Pokémart-style selection list. Implemented on `xgba/e5-expanded-save` in `include/constants/field_specials.h` (new `SCROLL_MULTI_XGBA_WORLD_SELECT = 13`, capacity increased from 16 to 20), `src/field_specials.c` (19 static WORLD 2–20 labels plus Exit; six visible rows, scroll arrows, current destination preselected), and `data/maps/XgbaTestTown/scripts.inc` (cancel/B leaves `VAR_XGBA_WORLD_ID` unchanged; selecting index 0–18 copies index+2 into the existing world ID; existing (16,12) warp scientist unchanged). No emulator or save-format modifications; existing E5 `.sav` should be reused. User has not yet verified this new menu in gameplay. The goal is one scrolling menu rather than up to 19 separate dialogs. Updated instructions and notes in `docs/XGBA_E5_README.md`.
+
 ## 2026-10-31: E5 LIVE GAMEPLAY PERSISTENCE ACCEPTED
 
 **USER CONFIRMED BOTH PHASES PASSED.** With the E5 Qt XGBA build and the separately initialized `xgba-emerald-e5.sav`, the user visited World 20 and World 3. In each world, the E5 writer successfully recorded the existing 16-byte E4 prototype event state and the E5 auditor reported a match. Returning between worlds preserved each independent E5 snapshot. After a normal in-game save, complete emulator shutdown, and reload, both world's E5 auditors again reported matches. This is direct user verification of guest 0x0F writes surviving the emulator's save-file cycle.
