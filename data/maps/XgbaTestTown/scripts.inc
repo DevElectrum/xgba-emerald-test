@@ -93,7 +93,7 @@ XgbaTestTown_Text_WorldStateError:
 	.string "Your progress was not replaced.$"
 
 XgbaTestTown_Text_FreshWorld:
-	.string "WORLD {STR_VAR_1} is beginning\\n"
+	.string "WORLD {STR_VAR_1} is beginning\n"
 	.string "a fresh Hoenn adventure!$"
 
 XgbaTestTown_Text_ToHoenn2:
