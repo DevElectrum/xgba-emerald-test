@@ -660,6 +660,20 @@ void WarpIntoMap(void)
 
 void SetWarpDestination(s8 mapGroup, s8 mapNum, s8 warpId, s8 x, s8 y)
 {
+    // E6: original story scripts have hard-coded original Hoenn map IDs.
+    // While inside a clone, send those scripted warps to the counterpart
+    // in the cloned map network. The lab portal is intentionally excluded.
+    // All 34 cloned groups retain the original map numbering.
+    if (gSaveBlock1Ptr != NULL
+        && VarGet(VAR_XGBA_WORLD_ID) >= 2
+        && VarGet(VAR_XGBA_WORLD_ID) <= 20
+        && gSaveBlock1Ptr->location.mapGroup >= 34
+        && gSaveBlock1Ptr->location.mapGroup < 68
+        && mapGroup >= 0 && mapGroup < 34
+        && !(mapGroup == MAP_GROUP(MAP_XGBA_TEST_TOWN)
+             && mapNum == MAP_NUM(MAP_XGBA_TEST_TOWN)))
+        mapGroup += 34;
+
     SetWarpData(&sWarpDestination, mapGroup, mapNum, warpId, x, y);
 }
 
