@@ -1,5 +1,15 @@
 # XGBA E6: rapid full-world virtualization plan
 
+## 2026-10-31: STREAMED PC PAGES IMPLEMENTED; NATIVE BUILD GREEN, GAMEPLAY NEXT
+
+- **First full ROM build SUCCESS** with source changes through `3a622364`: https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41188529114. This includes `src/xgba_e6_boxes.c`, E6 world switch/save hook integration, and new **CHANGE PC PAGE** choice in the regular Pokémon Storage main menu with eight selectable pages. **This is code-verified, not user gameplay-verified.**
+- 20 world states × 8 pages × 14 boxes = **2,240 boxes**, with **112 per world**. Existing 33,744-byte native storage stays resident in EWRAM; inactive pages are persisted in E6's mapped 16 MiB save. Two 0x44000-byte CRC-checked copies/world, file region 0x380000..0xE1FFFF, magic `XGBAE6B\0`, version 1. Page 1 retains each world's existing 14 boxes, other pages lazily initialized on first use. Previous good bank is kept as fallback during writes.
+- Inventory bug fix commit `a4990784`: transition/native-save code no longer calls `SavePlayerBag` to overwrite live `gSaveBlock1Ptr` inventory from `gLoadedSaveData`. No source change required in emulator.
+- Host support: `tools/xgba_e6_save.py inspect` now recognizes new PC banks, shows active page and initialized-page count, and validates header/payload CRCs. Unit test added for offsets, 8 pages, fallback on corrupt newer bank (`f20fbb0b`); its latest CI result may differ from above and must be checked.
+- **Fast next user acceptance:** close Qt XGBA, create a **timestamped backup of existing E6 .sav** before new code runs, pull latest E6 game branch and `make e6`, then launch same emulator and same E6 save. In World 3, enter Pokémon PC → CHANGE PC PAGE → PAGE 8 → MOVE POKÉMON/deposit a mon → return to PC PAGE 1 and back to PAGE 8. Pokémon must survive. Switch World 20 and back if easy, then a native save/cold restart. Also verify a Poké Ball spent in World 3 does not disappear or reset after portal switches. **No save migration required**, no E5 replay.
+- The earlier "next acceleration ... DESIGN, not code" below is preserved for historical context and now superseded. The 112-page system is **implemented but unaccepted** until user's in-game test.
+
+
 ## 2026-10-31 E6 PARTY ISOLATION ACCEPTED IN LIVE GAMEPLAY
 
 User-provided five sequential screenshots, **no in-game saves or emulator restarts**: World 20 single Torchic Lv6 at 6/22 HP → World 3 Torchic Lv8 with Zigzagoon and two Poochyena → captured another Zigzagoon in World 3 (now five Pokémon) → World 20 still single Torchic Lv6 6/22 HP → World 3 all five Pokémon retained, including the new Zigzagoon. **This proves in-session independent party/capture/HP state and correct repeated E6 portal restore between these two worlds.** It does NOT test an E6 new-party cold restart; do not imply it does. Detailed acceptance logged in game `docs/NEXT_ASTRA_HANDOFF.md` at commit `246a35bf`. Next: focus on 112 streamed PC boxes/world, not redundant party tests.
