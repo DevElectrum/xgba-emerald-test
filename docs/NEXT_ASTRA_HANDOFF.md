@@ -1,5 +1,21 @@
 # XGBA Emerald experiment: living Astra handoff
 
+## 2026-10-31: FINAL AUTOMATED E6 MAP/STORY AUDIT, NO MORE ROUTINE USER RETESTS
+
+**User instruction:** E6 is taking too long; proceed with remaining engineering checks and then move forward. Do not require more 20-world playthroughs, moving trucks, Birch or previously accepted v2 PC tests. Existing user-proven gameplay: World 2 full intro/Birch rescue/starter lab, fresh World 20 truck, existing World 3/20 parties/inventories/PC Zigzagoon, working cloned portal, plus previous optimized PC cold restart/performance.
+
+**Source-level audit found and FIXED specific compatibility regressions:**
+- `2dd382c9` / `7bfd996e`: Original Emerald special-case map comparisons in `src/field_specials.c` missed cloned map groups. Normalized Pokémon Center detection, last center visited, marts, Rusturf Tunnel state, abnormal weather/Marine Cave, Lilycove department store, cycling road, Trainer Hill, Birth Island and Battle Frontier special conditions.
+- `b8d8fba1`: `tests/test_xgba_e6_clones.py` additionally verifies each of 518 cloned maps' complete static warp and connection edges are original-equivalent with clone destinations, while leaving special `MAP_DYNAMIC`/`MAP_UNDEFINED` alone. Generator already fails on unmapped source links. Original events/callback tests remain intact.
+- `e5820be0`: Centralized low-cost map-group normalization `include/xgba_map_compat.h`, applied to `src/save_location.c` (cloned Pokémon Center/battle tower save/reload flags), `src/battle_setup.c` (Route 113 environment and table-driven trainer rematches), `src/overworld.c` (story-specific music, abnormal weather, location checks), `src/region_map.c` (SS Tidal room map) and `src/field_player_avatar.c` (Mew object looked up in ACTUAL cloned group, not the base-world group). World IDs and saved warp IDs remain unmodified. No E6 save format, A/B record, page-cache, emulator or EWRAM design change.
+- `57149242`: `tests/test_xgba_e6_canonical_maps.py` guards critical C lookup sites so regressions are caught by standard save-format CI.
+- `fd608759`: `SetCurrentMapLayout` now translates an original story-script layout index 1..441 into the corresponding clone index +442 **only while in an active clone world**. This preserves event-altered map geometry and prevents scripting a World 1 map layout onto a clone. World 1, already-cloned layouts and Test Town remain untouched. `840f4de1` adds a 441-layout parity regression guard to clone tests.
+
+**Verification boundary:** All changes have clean host Python regression tests as of this checkpoint. The newest full native 64 MiB ROM CI for `840f4de1` is at https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41201729189 ; capture final complete result before describing all code as fully build-green. Earlier `b8d8fba1` graph test and `7bfd996e` special map fixes passed full game build/host tests: https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41201384049 and https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41201417898 .
+
+**Pragmatic acceptance policy:** If final CI green, treat E6 as **experimental, feature-complete baseline** based on comprehensive static map/warp parity, all previously accepted save/PC tests, and representative early-game user acceptance. Do not say all 20 full-story campaigns or all rare postgame paths were individually completed. Further issues are normal bug reports/patches, not a reason to retain E6 indefinitely or demand repeated routine QA. Preserve the `xgba/e6-v2-accepted-20261031` rollback and original saves. Do not alter `master` or `DevElectrum/grand-anthology`.
+
+
 ## 2026-10-31: USER ACCEPTED FRESH WORLD 20 AT MOVING TRUCK
 
 **Actual gameplay confirmation:** user explicitly stated **"World 20 truck scene confirmed"** after using the *fresh* E6 test save and choosing a new World 20 following successful World 2 starter/Birch progression. This confirms the upper-bound world selector and unvisited-world pristine-template bootstrap reach the independent World 20 truck intro rather than inheriting World 2's ongoing story. World 2 had already passed moving truck, family/rival introduction, Route 101 Birch rescue, first battle and receipt of starter in Birch's lab. Those checks are **complete and must not be requested again** without a new regression reason.

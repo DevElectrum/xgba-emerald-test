@@ -1,3 +1,9 @@
+## Final E6 automated-audit checkpoint (2026-10-31)
+
+After accepted World 2 Birch/starter and World 20 truck + existing World 3/20 PC/bag/party tests, the user requested a fast final engineering pass instead of additional manual tests. Native Emerald world comparisons were audited and corrected across `field_specials.c`, `save_location.c`, `battle_setup.c`, `overworld.c`, `region_map.c`, and `field_player_avatar.c`. The shared `include/xgba_map_compat.h` normalizes groups 34..67 to original 0..33 **only for source-world table comparisons**, never when saving map identity or obtaining live object IDs. Story-script layout changes now map original 1..441 to clone 443..883 where appropriate. All 518 clones' native warps/connections, original event parity, and 441 cloned layout pairs are covered by repeatable tests. C lookup regression tests guard high-impact save, rematch and music cases.
+
+Full code changes are in `xgba/e6-world-virtualization` through `840f4de1`. Check run https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41201729189 for final ROM-build CI status, then keep E6 as an experimental feature-complete baseline rather than demanding 20 exhaustive playthroughs. Known limits: script path reachability and every late-game/legendary interaction cannot be formally proven by source parity; not all travel moves were personally exercised. Existing original saves are not to be touched.
+
 # XGBA E6: rapid full-world virtualization plan
 
 ## 2026-10-31: FULL 20-WORLD IMPLEMENTATION CHECKPOINT
