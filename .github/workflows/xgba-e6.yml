@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - xgba/e6-world-virtualization
+    paths-ignore:
+      - '**/*.md'
+      - AGENTS.md
   workflow_dispatch:
 
 permissions:
