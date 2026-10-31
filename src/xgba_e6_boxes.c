@@ -168,7 +168,7 @@ static bool8 CommitBank(u8 world, u8 targetPage)
         for (i = 0; i < sizeof(struct PokemonStorage); i++)
         {
             u8 value;
-            if (page == activePage)
+            if (page == sCurrentPage)
                 value = live[i];
             else if (oldData != NULL && (mask & (1 << page)))
                 value = oldData[page * sizeof(struct PokemonStorage) + i];
@@ -178,13 +178,11 @@ static bool8 CommitBank(u8 world, u8 targetPage)
             crc = UpdateCrc(crc, value);
         }
     }
-    mask |= (1 << activePage);
-    // A page must be initialized before it can become the persisted active page.
-    if (!(mask & (1 << targetPage)))
-    {
-        // Commit the current active page now; caller will initialize the next page.
-        targetPage = activePage;
-    }
+    // The current RAM page is authoritative for that page alone. The other
+    // seven pages always come from the last valid bank, never from live RAM.
+    mask |= (1 << sCurrentPage);
+    if (targetPage != sCurrentPage)
+        return FALSE;
     Write16(dest + 8, XGBA_E6_BOX_VERSION);
     Write16(dest + 10, world);
     Write32(dest + 12, sequence + 1);
