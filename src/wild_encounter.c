@@ -305,6 +305,14 @@ static u8 ChooseWildMonLevel(const struct WildPokemon *wildPokemon)
 static u16 GetCurrentMapWildMonHeaderId(void)
 {
     u16 i;
+    s16 mapGroup = gSaveBlock1Ptr->location.mapGroup;
+
+    // E6 clones all 34 original map groups, preserving their map numbers.
+    // Reuse native Hoenn encounter tables rather than cloning 135 entries.
+    // This works for all selectable worlds 2-20 because they share the
+    // same cloned map groups and differ only in their loaded world layout.
+    if (mapGroup >= 34 && mapGroup < 68)
+        mapGroup -= 34;
 
     for (i = 0; ; i++)
     {
@@ -312,10 +320,10 @@ static u16 GetCurrentMapWildMonHeaderId(void)
         if (wildHeader->mapGroup == MAP_GROUP(MAP_UNDEFINED))
             break;
 
-        if (gWildMonHeaders[i].mapGroup == gSaveBlock1Ptr->location.mapGroup &&
+        if (gWildMonHeaders[i].mapGroup == mapGroup &&
             gWildMonHeaders[i].mapNum == gSaveBlock1Ptr->location.mapNum)
         {
-            if (gSaveBlock1Ptr->location.mapGroup == MAP_GROUP(MAP_ALTERING_CAVE) &&
+            if (mapGroup == MAP_GROUP(MAP_ALTERING_CAVE) &&
                 gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_ALTERING_CAVE))
             {
                 u16 alteringCaveId = VarGet(VAR_ALTERING_CAVE_WILD_SET);
