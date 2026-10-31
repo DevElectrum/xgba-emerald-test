@@ -889,6 +889,14 @@ u8 LoadGameSave(u8 saveType)
     default:
         status = TryLoadSaveSlot(FULL_SAVE_SLOT, gRamSaveSectorLocations);
         CopyPartyAndObjectsFromSave();
+        // Restore the active PC page immediately on Continue, before any
+        // newly caught Pokémon can be sent to the boxes. Delaying this until
+        // the next portal/PC visit would overwrite post-load PC changes.
+        if (status == SAVE_STATUS_OK && XgbaE6Available()
+            && XgbaE6GetSelectedWorld() >= 2
+            && gSaveBlock1Ptr->location.mapGroup >= 34
+            && gSaveBlock1Ptr->location.mapGroup < 68)
+            XgbaE6BoxesEnterWorld(XgbaE6GetSelectedWorld());
         gSaveFileStatus = status;
         gGameContinueCallback = NULL;
         break;
