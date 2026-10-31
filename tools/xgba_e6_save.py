@@ -31,6 +31,8 @@ RECORD_HEADER_SIZE = 32
 MAX_WORLD_DATA = SLOT_SIZE - RECORD_HEADER_SIZE
 MAGIC = b"XGBAE6S\x00"
 RECORD_MAGIC = b"XGBAE6W\x00"
+TEMPLATE_MAGIC = b"XGBAE6T\x00"
+TEMPLATE_START = 0xE20000
 VERSION = 2
 
 # E6 eight-page PC sidecar (20 worlds × 2 bank copies × 8 native PC pages).
@@ -88,6 +90,51 @@ def validate(data):
     if not primary and not backup:
         raise E6SaveError("Neither E6 superblock is valid")
     return True
+
+
+def template_slot_offset(slot):
+    if slot not in (0, 1):
+        raise E6SaveError("Template slot must be 0 or 1")
+    offset = TEMPLATE_START + slot * SLOT_SIZE
+    if offset + SLOT_SIZE > BACKUP_HEADER:
+        raise E6SaveError("Template overlaps E6 superblock")
+    return offset
+
+
+def read_template_slot(data, slot):
+    offset = template_slot_offset(slot)
+    block = data[offset:offset + SLOT_SIZE]
+    if block == b"\xFF" * SLOT_SIZE:
+        return None
+    if len(block) != SLOT_SIZE:
+        return None
+    magic, version, world, seq, size, crc, header_crc, reserved = RECORD.unpack(
+        block[:RECORD_HEADER_SIZE]
+    )
+    if magic != TEMPLATE_MAGIC or version != VERSION or world != 0:
+        return None
+    if not seq or size != 53380 or reserved != 0:
+        return None
+    if zlib.crc32(block[:24]) != header_crc:
+        return None
+    payload = block[RECORD_HEADER_SIZE:RECORD_HEADER_SIZE + size]
+    if zlib.crc32(payload) != crc:
+        return None
+    return seq, slot, payload
+
+
+def read_template(data):
+    choices = []
+    for slot in (0, 1):
+        found = read_template_slot(data, slot)
+        if found is not None:
+            choices.append(found)
+    if choices:
+        return max(choices, key=lambda item: item[0])
+    if data[template_slot_offset(0):template_slot_offset(0) + SLOT_SIZE] == b"\xFF" * SLOT_SIZE:
+        if data[template_slot_offset(1):template_slot_offset(1) + SLOT_SIZE] == b"\xFF" * SLOT_SIZE:
+            return 0, None, b""
+    raise E6SaveError("Both E6 new-game template records are damaged")
 
 
 def slot_offset(world, slot):
@@ -242,6 +289,9 @@ def main():
     elif args.command == "inspect":
         data = args.save.read_bytes()
         validate(data)
+        template_seq, template_slot, template = read_template(data)
+        print(f"E6 fresh-world template: sequence={template_seq}, "
+              f"slot={template_slot}, size={len(template)}")
         for world in range(1, WORLD_COUNT + 1):
             sequence, slot, payload = read_world(data, world)
             print(f"E6 World {world:2d}: sequence={sequence}, slot={slot}, size={len(payload)}")
