@@ -1,5 +1,13 @@
 # XGBA E6: rapid full-world virtualization plan
 
+## Next acceleration: 112 PC boxes per world without growing EWRAM (DESIGN, not code)
+
+Use **eight switchable PC pages of fourteen native boxes**, yielding **112 boxes × 20 worlds = 2,240 boxes (67,200 slots)**. The normal Emerald PC UI continues to see 14 resident boxes; when switching page, save its 33,744-byte `PokemonStorage` into E6 extension and stream another page into the same EWRAM allocation. This is a far smaller code change than increasing `TOTAL_BOXES_COUNT` globally and breaking the 95%-full EWRAM.
+
+Proposed separate dual-copy box-bank area: E6 file offset `0x380000` through `0xE1FFFF`, 20 worlds × 2 copies × `0x44000` bytes (278,528 B) each. Each copy has v2 magic + CRC32 header, active-page index, and eight 33,744-byte native storage pages (269,952 bytes total). This fits within the 16 MiB save, with a substantial reserve before E6's backup header at `0xFFF000`. Keep one page resident in `gPokemonStoragePtr` and remember active-page metadata in the box record; snapshot current page on save/exit and load the appropriate page on world entry.
+
+Implement an initial page selector at a reachable cloned Littleroot test NPC if wiring it into every PC menu is too costly. Eventually integrate into the PC interface. **NO box-bank code exists yet; this is the next implementation target.** Preserve two-copy CRC integrity and avoid large new RAM buffers. Before coding, recheck actual `PokemonStorage` size and E6 offset math.
+
 ## Active implementation checkpoint (2026-10-31)
 
 **E6 development HAS STARTED.** Feature branches are real: emulator `xgba/e6-large-save` and game `xgba/e6-world-virtualization`. This section supersedes the older "no E6 code started" status below; retain the original design narrative for historical context.
