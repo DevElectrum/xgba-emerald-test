@@ -101,29 +101,26 @@ def main():
         clone["id"] = translated_ids[original["id"]]
         clone["layout"] = LAYOUT_PREFIX + original["layout"][len("LAYOUT_"):]
 
-        clone.pop("shared_events_map", None)
-        clone.pop("shared_scripts_map", None)
-        clone["shared_scripts_map"] = "Xgba2Neutral"
+        # The cloned map network keeps a single canonical set of scripts.
+        # Reuse original scripts but resolve map/event ownership to the clone.
+        # Neutralizing every callback leaves gyms and story triggers inert.
+        shared = original.get("shared_events_map")
+        if shared is not None:
+            if shared not in {entry[1] for entry in originals}:
+                raise ValueError(f"{name}: unknown shared events map {shared}")
+            clone["shared_events_map"] = MAP_PREFIX + shared
+        else:
+            clone.pop("shared_events_map", None)
+        clone["shared_scripts_map"] = original.get("shared_scripts_map", name)
 
-        # E6: bring real map inhabitants back. Keep automatic story-trigger
-        # coordinates neutral until all world-to-world script warps are routed.
-        clone["object_events"] = copy.deepcopy(original.get("object_events", []))
-        clone["coord_events"] = []
-        clone["bg_events"] = copy.deepcopy(original.get("bg_events", []))
+        for key in ("object_events", "coord_events", "bg_events"):
+            if key in original:
+                clone[key] = copy.deepcopy(original[key])
+            else:
+                clone.pop(key, None)
 
-        # Littleroot hosts our lab portal and E4/E6 diagnostics, and its
-        # original events would collide with those intentionally placed NPCs.
-        if name == "LittlerootTown":
-            clone["object_events"] = []
-            clone["bg_events"] = []
-
-        # Intro/rescue interactions are driven by map callbacks and coordinate
-        # triggers, not just visible NPCs. Without them Birch is mute and
-        # the rival house can show actors in the wrong story state.
-        if name in ("Route101", "LittlerootTown_MaysHouse_1F",
-                    "LittlerootTown_BrendansHouse_1F"):
-            clone["shared_scripts_map"] = original.get("shared_scripts_map", name)
-            clone["coord_events"] = copy.deepcopy(original.get("coord_events", []))
+        # Keep the sibling in place while the cloned rival-house callback
+        # determines its story visibility. Other original NPCs remain intact.
 
         # The rival sibling at May's east wall can wander across the boundary
         # before indoor map transitions have settled. Keep the sibling still.
@@ -151,7 +148,9 @@ def main():
             total_connections += 1
 
         if name == "LittlerootTown":
-            clone["object_events"].append({
+            # Retain vanilla introduction/story actors and add the laboratory
+            # portal + diagnostics without clearing original objects or triggers.
+            clone.setdefault("object_events", []).append({
                 "graphics_id": "OBJ_EVENT_GFX_SCIENTIST_1",
                 "x": 14, "y": 12, "elevation": 3,
                 "movement_type": "MOVEMENT_TYPE_FACE_DOWN",
