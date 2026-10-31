@@ -1,5 +1,12 @@
 # XGBA E6: rapid full-world virtualization plan
 
+## 2026-10-31: FULL 20-WORLD IMPLEMENTATION CHECKPOINT
+
+Full story/map callback restoration, stable active-world vs selected-destination separation, original World 1 portal snapshot/restore, clone-aware warp normalization, canonical Feebas/outbreak/Sootopolis encounters, 20-world host isolation tests, and an immutable new-game template have been coded on the E6 game branch. The pristine template occupies file 0xE20000–0xE3FFFF (extension 0xE00000), two CRC-protected 64 KiB slots, untouched by v2 PC pages, world records, native Flash/E5 and RTC. Fresh E6 games capture this template once after NewGameInitData; new worlds enter the cloned moving truck. Already populated E6 v2 saves without the template retain their historical World 1 baseline and no initialized world is reset.
+
+The **old E6 v2 Zigzagoon cold-restart check PASSED** according to the user. New source does not prove 20 complete Hoenn stories in gameplay. Run and inspect latest CI, then automated progression/travel integrity checks and a single short copy-save gameplay acceptance. Do not hand the user a build until latest source CI is green and no unforeseen ROM or save risks remain. Preserve rollback branch xgba/e6-v2-accepted-20261031 and every original user save. Details in docs/NEXT_ASTRA_HANDOFF.md.
+
+
 ## 2026-10-31: E6 v2 FIRST LIVE SPEED MEASUREMENTS
 
 User measured optimized E6 **PC page changes ≈1.0 s at 1×** and **world changes ≈1.5–2.0 s at 1×**, compared with legacy v1 **6–7 s at 5×** and **3–4 s at 5×**, respectively. Emulated speed differs, so no exact normalized speedup is claimed. Major responsiveness regression is resolved for ordinary gameplay; **no further optimization is planned solely for these delays**. The original aspirational sub-0.5s page / sub-1s world targets were specified at 5× but have not been separately measured at 5× in v2. The runtime report confirms transitions complete; it does **not** establish post-cold-restart PC/page durability or all converted-record integrity in the user's save. Keep focused persistence acceptance distinct from latency. This checkpoint is documentation-only.
