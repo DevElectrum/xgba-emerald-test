@@ -279,6 +279,9 @@ void XgbaE5SpecialAudit(void)
     struct XgbaWorldEventState saved;
     u16 length = 0;
     s32 status;
+    u32 i;
+    const u8 *existing;
+    const u8 *snapshot;
 
     gSpecialVar_Result = 0;
     if (!XgbaE5Available())
@@ -294,8 +297,18 @@ void XgbaE5SpecialAudit(void)
         gSpecialVar_Result = 2;
     else if (status < 0 || length != sizeof(saved))
         gSpecialVar_Result = 4;
-    else if (memcmp(&saved, state, sizeof(saved)) != 0)
-        gSpecialVar_Result = 3;
     else
+    {
+        existing = (const u8 *)state;
+        snapshot = (const u8 *)&saved;
         gSpecialVar_Result = 1;
+        for (i = 0; i < sizeof(saved); i++)
+        {
+            if (existing[i] != snapshot[i])
+            {
+                gSpecialVar_Result = 3;
+                break;
+            }
+        }
+    }
 }
