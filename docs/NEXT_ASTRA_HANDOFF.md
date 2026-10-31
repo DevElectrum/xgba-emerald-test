@@ -1,5 +1,12 @@
 # XGBA Emerald experiment: living Astra handoff
 
+## 2026-10-31: USER ACCEPTED E6 WORLD 3 / WORLD 20 INTEGRATION REGRESSION
+
+**Actual gameplay report after the clone portal collision fix / E6 branch rebuild:** user said, **"Yup. Party inventory and box zigzagoon all perfect in world 3 and 20."** The preceding test was blocked by the duplicate original World 1 portal on cloned Littleroot; the fixed clone scientist returns to Test Town. Interpret this as **user-confirmed functioning portal and intact party/inventory/PC storage in Worlds 3 and 20 on the new full-story E6 build.** Do not extrapolate to a World 1 isolation acceptance, cold-restart of this new build, or full Hoenn story completion without an explicit test report. Prior optimized v2 cold-restart Zigzagoon acceptance remains a separately confirmed test from the previous game build.
+
+**Next acceptance step:** a **brand-new isolated E6 save** (NOT a copy of existing populated 16 MiB v2 save) to exercise new-game template capture and pristine cloned moving-truck introduction in World 2 (and optionally World 20). Use a unique disposable directory with same-stem E6 ROM and .sav, initialize with `tools/xgba_e6_save.py` from blank native flash or call `initialize` with 128KiB fresh `0xFF` bytes, never open the only populated original save. One fresh story-path check through Route 101 Birch rescue rather than 20 playthroughs. Existing user progress and test A disposable ROM/save remain untouched.
+
+
 ## 2026-10-31: RUNTIME TEST A BLOCKER FIXED IN SOURCE (CLONE LITTLEROOT DUPLICATE PORTAL)
 
 **Actual user gameplay evidence:** A screenshot from the fresh E6 full-world integration build shows cloned Littleroot with the E4/E5 diagnostics and the message **"World 1 could not be saved. The portal will stay closed."** User was trying to return from a clone at the (14,12) scientist. They had already made a disposable E6 save/ROM pair, so their original save remains untouched.
