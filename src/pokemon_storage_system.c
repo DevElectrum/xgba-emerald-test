@@ -27,6 +27,7 @@
 #include "pokemon_icon.h"
 #include "pokemon_summary_screen.h"
 #include "pokemon_storage_system.h"
+#include "xgba_e6.h"
 #include "script.h"
 #include "sound.h"
 #include "string_util.h"
@@ -56,6 +57,7 @@ enum {
     OPTION_DEPOSIT,
     OPTION_MOVE_MONS,
     OPTION_MOVE_ITEMS,
+    OPTION_CHANGE_PAGE,
     OPTION_EXIT,
     OPTIONS_COUNT
 };
@@ -876,6 +878,34 @@ static void UnkUtil_Run(void);
 static void UnkUtil_CpuRun(struct UnkUtilData *);
 static void UnkUtil_DmaRun(struct UnkUtilData *);
 
+static const u8 sText_XgbaChangePage[] = _("CHANGE PC PAGE");
+static const u8 sText_XgbaChangePageDescription[] = _("Switch to one of eight PC pages.");
+static const u8 sText_XgbaPage1[] = _("PAGE 1");
+static const u8 sText_XgbaPage2[] = _("PAGE 2");
+static const u8 sText_XgbaPage3[] = _("PAGE 3");
+static const u8 sText_XgbaPage4[] = _("PAGE 4");
+static const u8 sText_XgbaPage5[] = _("PAGE 5");
+static const u8 sText_XgbaPage6[] = _("PAGE 6");
+static const u8 sText_XgbaPage7[] = _("PAGE 7");
+static const u8 sText_XgbaPage8[] = _("PAGE 8");
+static const u8 sText_XgbaPageInfo[] = _("Each page holds 14 boxes.");
+static const u8 sText_XgbaPageUnavailable[] = _("Unable to access E6 PC pages.");
+static const struct
+{
+    const u8 *text;
+    const u8 *desc;
+} sXgbaPageMenu[8] =
+{
+    {sText_XgbaPage1, sText_XgbaPageInfo},
+    {sText_XgbaPage2, sText_XgbaPageInfo},
+    {sText_XgbaPage3, sText_XgbaPageInfo},
+    {sText_XgbaPage4, sText_XgbaPageInfo},
+    {sText_XgbaPage5, sText_XgbaPageInfo},
+    {sText_XgbaPage6, sText_XgbaPageInfo},
+    {sText_XgbaPage7, sText_XgbaPageInfo},
+    {sText_XgbaPage8, sText_XgbaPageInfo}
+};
+
 struct {
     const u8 *text;
     const u8 *desc;
@@ -885,6 +915,7 @@ struct {
     [OPTION_DEPOSIT]    = {gText_DepositPokemon,  gText_DepositMonDescription},
     [OPTION_MOVE_MONS]  = {gText_MovePokemon,     gText_MoveMonDescription},
     [OPTION_MOVE_ITEMS] = {gText_MoveItems,       gText_MoveItemsDescription},
+    [OPTION_CHANGE_PAGE] = {sText_XgbaChangePage, sText_XgbaChangePageDescription},
     [OPTION_EXIT]       = {gText_SeeYa,           gText_SeeYaDescription}
 };
 
@@ -894,7 +925,7 @@ static const struct WindowTemplate sWindowTemplate_MainMenu =
     .tilemapLeft = 1,
     .tilemapTop = 1,
     .width = 17,
-    .height = 10,
+    .height = 12,
     .paletteNum = 15,
     .baseBlock = 0x1,
 };
@@ -1527,6 +1558,7 @@ enum {
     STATE_HANDLE_INPUT,
     STATE_ERROR_MSG,
     STATE_ENTER_PC,
+    STATE_PAGE_SELECT,
 };
 
 #define tState          data[0]
@@ -1534,6 +1566,24 @@ enum {
 #define tInput          data[2]
 #define tNextOption     data[3]
 #define tWindowId       data[15]
+
+static void OpenXgbaPcPageMenu(struct Task *task)
+{
+    struct WindowTemplate template = sWindowTemplate_MainMenu;
+    u8 windowId;
+
+    ClearStdWindowAndFrame(task->data[15], TRUE);
+    RemoveWindow(task->data[15]);
+    template.height = 16;
+    windowId = AddWindow(&template);
+    DrawStdWindowFrame(windowId, FALSE);
+    PrintMenuTable(windowId, 8, (void *)sXgbaPageMenu);
+    InitMenuInUpperLeftCornerNormal(windowId, 8,
+        XgbaE6BoxesGetPage(XgbaE6GetSelectedWorld()));
+    CopyWindowToVram(windowId, COPYWIN_FULL);
+    task->data[15] = windowId;
+    task->data[0] = STATE_PAGE_SELECT;
+}
 
 static void Task_PCMainMenu(u8 taskId)
 {
@@ -1582,7 +1632,11 @@ static void Task_PCMainMenu(u8 taskId)
             DestroyTask(taskId);
             break;
         default:
-            if (task->tInput == OPTION_WITHDRAW && CountPartyMons() == PARTY_SIZE)
+            if (task->tInput == OPTION_CHANGE_PAGE)
+            {
+                OpenXgbaPcPageMenu(task);
+            }
+            else if (task->tInput == OPTION_WITHDRAW && CountPartyMons() == PARTY_SIZE)
             {
                 // Can't withdraw
                 FillWindowPixelBuffer(0, PIXEL_FILL(1));
@@ -1643,6 +1697,21 @@ static void Task_PCMainMenu(u8 taskId)
             RemoveWindow(task->tWindowId);
             DestroyTask(taskId);
         }
+        break;
+    case STATE_PAGE_SELECT:
+        task->tInput = Menu_ProcessInput();
+        if (task->tInput == MENU_NOTHING_CHOSEN)
+            break;
+        if (task->tInput != MENU_B_PRESSED
+            && !XgbaE6BoxesSwitchPage(XgbaE6GetSelectedWorld(), task->tInput))
+        {
+            FillWindowPixelBuffer(0, PIXEL_FILL(1));
+            AddTextPrinterParameterized2(0, FONT_NORMAL, sText_XgbaPageUnavailable,
+                0, NULL, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_WHITE, TEXT_COLOR_LIGHT_GRAY);
+        }
+        ClearStdWindowAndFrame(task->tWindowId, TRUE);
+        RemoveWindow(task->tWindowId);
+        task->tState = STATE_LOAD;
         break;
     }
 }
