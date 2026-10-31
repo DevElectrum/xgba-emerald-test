@@ -1,5 +1,10 @@
 # XGBA E6: rapid full-world virtualization plan
 
+## 2026-10-31 E6 playability acceleration (implemented, runtime unverified)
+
+Commit `f09e785c` on E6 game branch changed `tools/xgba_generate_e2.py` to **restore ordinary object NPCs, trainers and BG interactions** from original Hoenn into cloned maps, except Littleroot which retains accessible lab/E4/E6 diagnostic NPCs. Automatic coordinate events and map callbacks remain neutral, as original story script warp destinations have not been fully audited/remapped. Some maps using `shared_events_map` may still have missing NPCs because shared event references are not yet resolved. This is *not* yet 20 complete story campaigns. ROM CI for this NPC change: https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41183201138 (pending at checkpoint). Earlier **full E6 C world-switch code** successfully built in https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41183020017. No E6 user gameplay acceptance yet.
+
+
 ## Next acceleration: 112 PC boxes per world without growing EWRAM (DESIGN, not code)
 
 Use **eight switchable PC pages of fourteen native boxes**, yielding **112 boxes × 20 worlds = 2,240 boxes (67,200 slots)**. The normal Emerald PC UI continues to see 14 resident boxes; when switching page, save its 33,744-byte `PokemonStorage` into E6 extension and stream another page into the same EWRAM allocation. This is a far smaller code change than increasing `TOTAL_BOXES_COUNT` globally and breaking the 95%-full EWRAM.
