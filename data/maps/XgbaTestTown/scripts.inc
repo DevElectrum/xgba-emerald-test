@@ -140,7 +140,7 @@ XgbaE4_Text_VisitedProgress:
 XgbaE5_EventScript_Snapshot::
 	lock
 	faceplayer
-	special XgbaE5SpecialSnapshot
+	special XgbaE6SpecialSnapshot
 	compare VAR_RESULT, 1
 	goto_if_eq XgbaE5_EventScript_SnapshotSuccess
 	compare VAR_RESULT, 0
@@ -157,7 +157,7 @@ XgbaE5_EventScript_SnapshotSuccess:
 XgbaE5_EventScript_Audit::
 	lock
 	faceplayer
-	special XgbaE5SpecialAudit
+	special XgbaE6SpecialAudit
 	compare VAR_RESULT, 1
 	goto_if_eq XgbaE5_EventScript_AuditSuccess
 	compare VAR_RESULT, 0
@@ -191,29 +191,29 @@ XgbaE5_EventScript_Unsupported:
 	end
 
 XgbaE5_Text_SnapshotSuccess:
-	.string "E5: Wrote this world's event bank!\n"
-	.string "Use the next auditor after saving.$"
+	.string "E6: Full world snapshot saved!\n"
+	.string "Party, bag, PC stored in 64 KiB.$"
 
 XgbaE5_Text_AuditSuccess:
-	.string "E5: Persistent event bank matches!\n"
-	.string "Our new save window works.$"
+	.string "E6: Full world record is intact!\n"
+	.string "Checksum and version passed.$"
 
 XgbaE5_Text_AuditEmpty:
-	.string "E5: No snapshot for this world.\n"
+	.string "E6: No full snapshot for this world.\n"
 	.string "Talk to the writer first.$"
 
 XgbaE5_Text_AuditMismatch:
-	.string "E5: Snapshot differs from RAM.\n"
+	.string "E6: Snapshot differs from RAM.\n"
 	.string "Did you change progress since then?$"
 
 XgbaE5_Text_AuditCorrupt:
-	.string "E5: Cannot verify saved record.\n"
+	.string "E6: Cannot verify saved record.\n"
 	.string "No data was overwritten.$"
 
 XgbaE5_Text_WriteFailed:
-	.string "E5: Record write refused.\n"
+	.string "E6: Record write refused.\n"
 	.string "Check the save-format integrity.$"
 
 XgbaE5_Text_Unsupported:
-	.string "E5 expanded save is unavailable!\n"
+	.string "E6 16 MiB save is unavailable!\n"
 	.string "No extra-memory write occurred.$"
