@@ -1,5 +1,10 @@
 # XGBA E6: rapid full-world virtualization plan
 
+## 2026-10-31 E6 PARTY ISOLATION ACCEPTED IN LIVE GAMEPLAY
+
+User-provided five sequential screenshots, **no in-game saves or emulator restarts**: World 20 single Torchic Lv6 at 6/22 HP → World 3 Torchic Lv8 with Zigzagoon and two Poochyena → captured another Zigzagoon in World 3 (now five Pokémon) → World 20 still single Torchic Lv6 6/22 HP → World 3 all five Pokémon retained, including the new Zigzagoon. **This proves in-session independent party/capture/HP state and correct repeated E6 portal restore between these two worlds.** It does NOT test an E6 new-party cold restart; do not imply it does. Detailed acceptance logged in game `docs/NEXT_ASTRA_HANDOFF.md` at commit `246a35bf`. Next: focus on 112 streamed PC boxes/world, not redundant party tests.
+
+
 ## 2026-10-31 E6 playability acceleration (implemented, runtime unverified)
 **CI UPDATE: PASS.** The latest NPC restoration source commit `f09e785c` passed both Emerald native ROM build and E6 save-format jobs on [run 41183201138](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41183201138). E6 is READY FOR THE FIRST USER INTEGRATION SMOKE TEST, but no user runtime results yet. All subsequent commits currently only changed docs/agents. Existing E5 save and ROM remain untouched.
 
