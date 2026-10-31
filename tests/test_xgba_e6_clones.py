@@ -120,5 +120,23 @@ class CloneEventTests(unittest.TestCase):
         self.assertGreater(total_connections, 100)
 
 
+    def test_story_layout_changes_select_same_world_geometry(self):
+        generator.main()
+        layouts = json.loads((ROOT / "data/layouts/layouts.json").read_text())["layouts"]
+        self.assertEqual(len(layouts), 883)
+        self.assertEqual(layouts[441]["id"], "LAYOUT_XGBA_TEST_TOWN")
+
+        for index in range(441):
+            original = layouts[index]
+            clone = layouts[442 + index]
+            expected_id = "LAYOUT_XGBA2_" + original["id"][len("LAYOUT_"):]
+            self.assertEqual(clone["id"], expected_id, index)
+            self.assertEqual(clone["name"], "Xgba2_" + original["name"], index)
+
+        engine = (ROOT / "src/overworld.c").read_text()
+        self.assertIn("mapLayoutId < XGBA_E3_FIRST_LAYOUT_ID - 1", engine)
+        self.assertIn("mapLayoutId += XGBA_E3_FIRST_LAYOUT_ID - 1;", engine)
+
+
 if __name__ == "__main__":
     unittest.main()
