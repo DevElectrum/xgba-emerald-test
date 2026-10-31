@@ -2,6 +2,12 @@
 
 **Status (2026-10-31): E5 proof-of-concept ACCEPTED in user gameplay.** World 20 and World 3 independently wrote and audited E5 records, retained matching records across switching worlds, and passed normal save, complete emulator shutdown, restart, and re-audit. This verifies the real guest→emulator→disk→guest byte-storage path for the current 16-byte E4 event snapshots. Full per-world game saves, PC box expansion, maximum payload stress tests, and interrupted-write recovery are **not** accepted.
 
+## Test-town world selector quality-of-life update (2026-10-31)
+
+In **XGBA Test Town**, the scientist at **(18,12)** now opens a native six-row scrollable list: **WORLD 2** through **WORLD 20**, followed by **Exit**. The currently selected world starts highlighted; pressing B or selecting Exit leaves the world ID unchanged. Selecting a world writes its ID to the existing `VAR_XGBA_WORLD_ID` and displays a brief confirmation. The neighboring scientist at **(16,12)** still warps to that destination.
+
+Implementation uses Emerald's existing `ShowScrollableMultichoice` UI (new `SCROLL_MULTI_XGBA_WORLD_SELECT` option) and changes `data/maps/XgbaTestTown/scripts.inc`, `src/field_specials.c`, and `include/constants/field_specials.h`. The test-world map data, accepted E5 save protocol, emulator, and PC storage remain unchanged. This change is test-ROM-only and should retain existing `.sav` data without migration.
+
 ## Existing save-sector audit
 
 Ordinary Pokémon Emerald uses a 128 KiB / 32-sector flash save. Per `src/save.c` and `include/save.h`:
