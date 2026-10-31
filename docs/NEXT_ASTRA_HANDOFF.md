@@ -1,5 +1,12 @@
 # XGBA Emerald experiment: living Astra handoff
 
+## 2026-10-31: USER ACCEPTED FRESH WORLD 20 AT MOVING TRUCK
+
+**Actual gameplay confirmation:** user explicitly stated **"World 20 truck scene confirmed"** after using the *fresh* E6 test save and choosing a new World 20 following successful World 2 starter/Birch progression. This confirms the upper-bound world selector and unvisited-world pristine-template bootstrap reach the independent World 20 truck intro rather than inheriting World 2's ongoing story. World 2 had already passed moving truck, family/rival introduction, Route 101 Birch rescue, first battle and receipt of starter in Birch's lab. Those checks are **complete and must not be requested again** without a new regression reason.
+
+**Combined user-accepted runtime coverage:** (A) existing populated E6 v2 compatibility with World 3/20 parties, inventories and PC Zigzagoon, plus cloned portal fix; (B) fresh World 2 beginning and early scripted story, and independent fresh World 20 truck bootstrap. **Not yet proven:** full completion of 20 individual campaigns, all later story scripts/gyms/legendary events, special travel/fly/dive, World 1 original-state isolation and current-ROM cold-restart semantics; do not mark E6 fully completed. Next task belongs to engineering/automation: audit later-story event reachability, map-specific C checks and all warp paths with deterministic validation, rather than ask the user to replay introductions or 20 Hoenns. Preserve original save and test-only saves.
+
+
 ## 2026-10-31: USER ACCEPTED WORLD 2 EARLY STORY THROUGH BIRCH LAB STARTER
 
 **Actual new gameplay acceptance:** User reported **"Yup. World 2 progressed to first battle and getting starter from birch in lab. Sequence went perfectly."** This supersedes prior uncertainty about the cloned moving-truck introduction and Birch event sequence. In a fresh, separate E6 16 MiB test save, **World 2 moving truck → Littleroot family/rival intro → Route 101 Birch Zigzagoon rescue → initial battle → receiving starter at Birch's lab** worked correctly in user gameplay. The cloned map coordinate triggers, NPC/event callbacks and early script warps are now confirmed to function along this specific progression path.
