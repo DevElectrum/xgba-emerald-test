@@ -1,5 +1,20 @@
 # XGBA Emerald experiment: living Astra handoff
 
+## CURRENT NEXT ASTRA CHECKPOINT: 2026-10-31 (E6 planned, no E6 code started)
+
+**Immediate instruction:** Read [`docs/XGBA_E6_PLAN.md`](XGBA_E6_PLAN.md) and [`AGENTS.md`](../AGENTS.md), plus companion emulator handoff and AGENTS. User explicitly rejected conservative flags-only E6 in favor of an ambitious, fast-moving E6. **Regieleki: speed is god.** This is a passion project: take large steps, run minimal CI and selected gameplay smoke tests, use backups, and accept temporary breakage rather than designing a huge QA bureaucracy.
+
+**Current verified work:** accepted E3 geography (20 selectable Hoenn layouts), accepted E4 per-world 16-byte event state, and **user-tested E5 1 MiB extended-save snapshot persistence for World 3 and 20 across normal save, full XGBA shutdown and reload**. They should NOT have to repeat those tests. E5 selection-menu QoL change implemented in game branch: Test Town (18,12) opens a scrolling list Worlds 2..20; neighboring (16,12) warps. No explicit user confirmation of that newer menu's runtime behavior yet.
+
+**E6 planned scope (NOT IMPLEMENTED):** increase emulator file-backed E5 save to a **versioned ~16 MiB E6** format, independent world-local `SaveBlock1`, `SaveBlock2`, PC storage, parties, inventory, story flags, trainer state and safe world transitions; restore actual events/NPCs/story in cloned Hoenn; attempt **100 PC boxes per world** as aggressive stretch. Avoid claiming mere disk growth automatically fixes box UI or 95%-full EWRAM. Need deliberate shared/global metadata, migration from E5, streamed records and safe warp boundary. E6 is a combined large milestone, not flags-only E6 followed by later storage milestones.
+
+**Next steps:** (1) inspect current HEAD, code and CI; (2) when starting implementation, branch the **game** `xgba/e6-world-virtualization` from `xgba/e5-expanded-save` and the **emulator** `xgba/e6-large-save` from `xgba/e5-save-expansion` (names proposed, branches do not yet exist); (3) implement expanded file-backed save + migration first or in parallel with world-state serialization, then restored maps and big boxes, iterating rapidly. Protect E4/E5 savenames and `master`; never touch `DevElectrum/grand-anthology`.
+
+**Repository changes made during this handoff update:** E6 strategy doc added `8099a85a`; game `AGENTS.md` updated `060bee38`; emulator `AGENTS.md` created on E5 branch `1a66d9a0`. These are **documentation-only** changes; no new emulator/game runtime E6 code was written, and no new E6 gameplay tests run in this checkpoint.
+
+**Mandatory continuity rule:** at every meaningful coding milestone/CI result/architecture change/blocker, *commit an updated handoff before ending or exhausting chat context*. Update both repos' `AGENTS.md` and handoffs when instructions/interfaces change. Record exact branch and commit, changed files, tests with links and observed status, outstanding bugs, and concrete next action. The user wants ~three terminal commands only (update/build, optional save copy, launch Qt GUI). GitHub updates are not yet present in the user's local Nyx repos until `git pull`.
+
+
 ## 2026-10-31: Test Town world selector replaced with a native scrolling menu
 
 User asked to replace the repetitive (18,12) world-ID cycling NPC (World 2 through World 20) with a Pokémart-style selection list. Implemented on `xgba/e5-expanded-save` in `include/constants/field_specials.h` (new `SCROLL_MULTI_XGBA_WORLD_SELECT = 13`, capacity increased from 16 to 20), `src/field_specials.c` (19 static WORLD 2–20 labels plus Exit; six visible rows, scroll arrows, current destination preselected), and `data/maps/XgbaTestTown/scripts.inc` (cancel/B leaves `VAR_XGBA_WORLD_ID` unchanged; selecting index 0–18 copies index+2 into the existing world ID; existing (16,12) warp scientist unchanged). No emulator or save-format modifications; existing E5 `.sav` should be reused. User has not yet verified this new menu in gameplay. The goal is one scrolling menu rather than up to 19 separate dialogs. Updated instructions and notes in `docs/XGBA_E5_README.md`.
