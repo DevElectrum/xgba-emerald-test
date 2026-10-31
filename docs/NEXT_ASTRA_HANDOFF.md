@@ -1,5 +1,10 @@
 # XGBA Emerald experiment: living Astra handoff
 
+## 2026-10-31: Party-isolation screenshot, interpretation corrected (NO code changed)
+
+User supplied two Pokémon-party screenshots: World 20 shows only Torchic Lv.6, 6/22 HP; the other screenshot has Torchic Lv.8, 22/27 HP, Zigzagoon Lv.3 and two Poochyena (Lv.2 and Lv.3; latter 5/15 HP). User believes a Pokémon capture made Torchic appear in World 20, though they never personally acquired a starter there. **This is NOT sufficient evidence of a leak**. Source in `src/xgba_e6.c:XgbaE6SpecialEnterWorld` initializes any previously empty world from one saved World 1 baseline, which could legitimately contain Torchic Lv.6. Subsequent visits restore that world's own saved party. Screenshots show diverged parties: the newly caught low-HP Poochyena does not appear in World 20, consistent with correct isolation. Distinguish being *granted* a starter in World 20 from having starter *inherited* at baseline creation. If user explicitly confirms World 20 had an empty party in the E6 save immediately before capture and the appearance happened without first-time world initialization, investigate further. Avoid patching save serialization on unproven contamination; protect E6 save and E5 baseline. No runtime or source change made for this report.
+
+
 ## 2026-10-31: Cloned Hoenn wild encounters restored in E6 source
 
 - User asked whether World 3 has Pokémon spawns. **NO in previous E6 builds**: `src/data/wild_encounters.json` contained 135 encounter entries for base Hoenn, zero `MAP_XGBA2_*` clone entries. `GetCurrentMapWildMonHeaderId` in `src/wild_encounter.c` previously required an exact group+map match, so all clone maps in groups 34–67 returned `HEADER_NONE` and had no standard wild encounters.
