@@ -16,11 +16,13 @@ WORLD_LAST = 20
 
 def plan(args):
     prefix, existing, used = e2.plan(args)
-    if getattr(args, "e5_save", False):
+    if getattr(args, "e5_save", False) and getattr(args, "e6_save", False):
+        raise ValueError("Choose E5 or E6 save format, not both")
+    if getattr(args, "e5_save", False) or getattr(args, "e6_save", False):
         prefix = bytearray(prefix)
         if bytes(prefix[0xB5:0xBC]) != b"XGBA256":
-            raise ValueError("E5 ROM must retain the XGBA256 cartridge tag")
-        prefix[0xBC] = 0xE5
+            raise ValueError("E5/E6 ROM must retain the XGBA256 cartridge tag")
+        prefix[0xBC] = 0xE6 if getattr(args, "e6_save", False) else 0xE5
         prefix[0xBD] = (-0x19 - sum(prefix[0xA0:0xBD])) & 0xFF
         prefix = bytes(prefix)
     clones, positions, stride_used, end = generator.layout_plan()
@@ -87,6 +89,7 @@ def main():
     parser.add_argument("--output", default="xgba-emerald-e3.gba")
     parser.add_argument("--nm", default="arm-none-eabi-nm")
     parser.add_argument("--e5-save", action="store_true", help="Opt in to E5 extended save mapping (ROM revision E5)")
+    parser.add_argument("--e6-save", action="store_true", help="Opt in to E6 16 MiB save mapping (ROM revision E6)")
     args = parser.parse_args()
     if args.command == "pack":
         pack(args)
