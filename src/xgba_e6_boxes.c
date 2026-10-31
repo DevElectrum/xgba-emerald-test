@@ -66,6 +66,10 @@ const u32 gXgbaE6CrcTable[256] =
 static u8 sCurrentWorld;
 static u8 sCurrentPage;
 static bool8 sBoxReady;
+static bool8 sSavedValid;
+static u8 sSavedSlot;
+static u32 sSavedSeq;
+static u32 sSavedCrc;
 
 static u16 Read16(const volatile u8 *p)
 {
@@ -288,14 +292,30 @@ static bool8 WritePage(u8 world, u8 page)
     volatile u8 *target;
     const u8 *live = (const u8 *)gPokemonStoragePtr;
 
-    status = FindPage(world, page, &oldSlot, &seq, &oldCrc);
+    // Loaded records were CRC-checked when entering this page. Cache their
+    // source and sequence so every save/world checkpoint avoids a 34 KiB
+    // extension read. Only the live RAM page needs re-hashing.
+    if (!sBoxReady || world != sCurrentWorld || page != sCurrentPage)
+        return FALSE;
+    if (sSavedValid)
+    {
+        status = 1;
+        oldSlot = sSavedSlot;
+        seq = sSavedSeq;
+        oldCrc = sSavedCrc;
+    }
+    else
+    {
+        status = FindPage(world, page, &oldSlot, &seq, &oldCrc);
+    }
     if (status < 0 || seq == 0xFFFFFFFF)
         return FALSE;
     crc = CrcRam(live, sizeof(struct PokemonStorage));
     if (status == 1 && crc == oldCrc)
         return TRUE;
 
-    target = PageRecord(world, page, status == 1 ? 1 - oldSlot : 0);
+    sSavedSlot = status == 1 ? 1 - oldSlot : 0;
+    target = PageRecord(world, page, sSavedSlot);
     for (i = 0; i < 8; i++)
         target[i] = 0xFF;
     // Invalidate header CRC before writing any payload. A/B protects old slot.
@@ -304,6 +324,9 @@ static bool8 WritePage(u8 world, u8 page)
         target[XGBA_BOX_HEADER_SIZE + i] = live[i];
     WriteHeader(target, sPageMagic, world, page, seq + 1,
         sizeof(struct PokemonStorage), crc);
+    sSavedSeq = seq + 1;
+    sSavedCrc = crc;
+    sSavedValid = TRUE;
     return TRUE;
 }
 
@@ -386,6 +409,7 @@ bool8 XgbaE6BoxesEnterWorld(u8 world)
         sCurrentWorld = world;
         sCurrentPage = 0;
         sBoxReady = TRUE;
+        sSavedValid = FALSE;
         if (!WritePage(world, 0) || !WriteMeta(world, 0))
         {
             sBoxReady = FALSE;
@@ -401,6 +425,10 @@ bool8 XgbaE6BoxesEnterWorld(u8 world)
     sCurrentWorld = world;
     sCurrentPage = page;
     sBoxReady = TRUE;
+    sSavedValid = TRUE;
+    sSavedSlot = slot;
+    sSavedSeq = pageSeq;
+    sSavedCrc = crc;
     return TRUE;
 }
 
@@ -458,6 +486,13 @@ bool8 XgbaE6BoxesSwitchPage(u8 world, u8 nextPage)
     }
 
     sCurrentPage = nextPage;
+    sSavedValid = targetStatus == 1;
+    if (targetStatus == 1)
+    {
+        sSavedSlot = slot;
+        sSavedSeq = seq;
+        sSavedCrc = crc;
+    }
     if (targetStatus == 0 && !WritePage(world, nextPage))
     {
         sCurrentPage = oldPage;
