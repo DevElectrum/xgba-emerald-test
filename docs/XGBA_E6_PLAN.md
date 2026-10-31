@@ -1,5 +1,10 @@
 # XGBA E6: rapid full-world virtualization plan
 
+## 2026-10-31: E6 v2 FIRST LIVE SPEED MEASUREMENTS
+
+User measured optimized E6 **PC page changes ≈1.0 s at 1×** and **world changes ≈1.5–2.0 s at 1×**, compared with legacy v1 **6–7 s at 5×** and **3–4 s at 5×**, respectively. Emulated speed differs, so no exact normalized speedup is claimed. Major responsiveness regression is resolved for ordinary gameplay; **no further optimization is planned solely for these delays**. The original aspirational sub-0.5s page / sub-1s world targets were specified at 5× but have not been separately measured at 5× in v2. The runtime report confirms transitions complete; it does **not** establish post-cold-restart PC/page durability or all converted-record integrity in the user's save. Keep focused persistence acceptance distinct from latency. This checkpoint is documentation-only.
+
+
 ## 2026-10-31: E6 optimized PC V2 save format implemented, pending gameplay acceptance
 
 **Engineering decision after adversarial review:** The legacy PC storage system was functionally correct but repeatedly rewrote/checksummed two ~270KB all-page banks. User measured page switch **6–7 seconds** at 5× fast-forward; world change **3–4 seconds** at 5×. No more repeated optimization test waves for foreseeable bottlenecks. The optimized design isolates every 33,744-byte PC page in separate CRC32 A/B records and keeps tiny A/B metadata for selected page. A ROM-resident CRC table, resident CRC/slot cache, and no-op writes for unchanged pages reduce repeated cost. Original native world snapshot records retain their format, with faster CRC and no padding fill.
