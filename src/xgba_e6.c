@@ -316,8 +316,9 @@ static bool8 XgbaE6PrepareCurrentState(void)
 void XgbaE6SpecialEnterWorld(void)
 {
     u8 world;
+    u8 sourceWorld;
     s32 status;
-    s32 baseline;
+    bool8 entered = FALSE;
 
     gSpecialVar_Result = 4;
     if (!XgbaE6Available())
@@ -325,37 +326,49 @@ void XgbaE6SpecialEnterWorld(void)
         gSpecialVar_Result = 0;
         return;
     }
-    world = XgbaE6CurrentWorld();
+    sourceWorld = XgbaE6CurrentWorld();
+    world = VarGet(VAR_XGBA_TARGET_WORLD);
     if (world < 2 || world > 20)
-        return;
+        world = sourceWorld >= 2 ? sourceWorld : 2;
 
-    // Reject a missing/legacy/corrupt destination PC before mutating live data.
+    // The selected destination is not the active world until the restore
+    // succeeds. Reject legacy/corrupt records before replacing live data.
     if (!XgbaE6BoxesCanEnterWorld(world))
         return;
     status = XgbaE6AuditWorld(world);
     if (status == 0)
     {
-        baseline = XgbaE6AuditWorld(1);
-        if (baseline == 0)
+        // Never seed a fresh world from whichever clone is resident in the
+        // hub. World 1 must first have an independently checkpointed source.
+        if (XgbaE6AuditWorld(1) != 1)
+            return;
+        if (XgbaE6RestoreWorld(1))
         {
-            if (!XgbaE6PrepareCurrentState() || !XgbaE6SnapshotWorld(1))
-                return;
+            VarSet(VAR_XGBA_WORLD_ID, world);
+            if (XgbaE6PrepareCurrentState()
+                && XgbaE6SnapshotWorld(world)
+                && XgbaE6BoxesEnterWorld(world))
+                entered = TRUE;
         }
-        else if (baseline < 0)
-        {
-            return;
-        }
-        if (!XgbaE6RestoreWorld(1))
-            return;
-        if (!XgbaE6PrepareCurrentState() || !XgbaE6SnapshotWorld(world))
-            return;
-        if (!XgbaE6BoxesEnterWorld(world))
-            return;
     }
-    else if (status < 0 || !XgbaE6RestoreWorld(world))
+    else if (status == 1 && XgbaE6RestoreWorld(world))
     {
+        entered = TRUE;
+    }
+
+    if (!entered)
+    {
+        // The source was checkpointed at its portal before entering the lab.
+        // Revert any partially restored state rather than mixing worlds.
+        if (XgbaE6AuditWorld(sourceWorld) == 1)
+        {
+            if (XgbaE6RestoreWorld(sourceWorld))
+                VarSet(VAR_XGBA_WORLD_ID, sourceWorld);
+        }
         return;
     }
+    VarSet(VAR_XGBA_WORLD_ID, world);
+    VarSet(VAR_XGBA_TARGET_WORLD, world);
     gSpecialVar_Result = 1;
 }
 

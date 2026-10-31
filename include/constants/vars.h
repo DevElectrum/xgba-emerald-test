@@ -274,7 +274,7 @@
 #define VAR_UNUSED_0x40FB                                0x40FB // Unused Var
 #define VAR_UNUSED_0x40FC                                0x40FC // Unused Var
 #define VAR_UNUSED_0x40FD                                0x40FD // Unused Var
-#define VAR_UNUSED_0x40FE                                0x40FE // Unused Var
+#define VAR_XGBA_TARGET_WORLD                             0x40FE // Hub destination; not active world
 #define VAR_XGBA_WORLD_ID                                 0x40FF // Persistent XGBA world selector (0/1 = original, 2..20 = clones)
 
 #define VARS_END                                         0x40FF

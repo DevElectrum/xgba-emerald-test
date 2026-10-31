@@ -38,9 +38,9 @@ Xgba2Neutral_MapScripts::
 XgbaTestTown_EventScript_ToHoenn2::
 	lock
 	faceplayer
-	compare VAR_XGBA_WORLD_ID, 2
+	compare VAR_XGBA_TARGET_WORLD, 2
 	goto_if_ge XgbaTestTown_EventScript_EnterSelectedWorld
-	setvar VAR_XGBA_WORLD_ID, 2
+	setvar VAR_XGBA_TARGET_WORLD, 2
 XgbaTestTown_EventScript_EnterSelectedWorld:
 	special XgbaE6SpecialEnterWorld
 	compare VAR_RESULT, 1
@@ -99,9 +99,9 @@ XgbaTestTown_EventScript_NextWorld::
 	goto_if_eq XgbaTestTown_EventScript_CancelWorld
 	compare VAR_RESULT, 19
 	goto_if_eq XgbaTestTown_EventScript_CancelWorld
-	copyvar VAR_XGBA_WORLD_ID, VAR_RESULT
-	addvar VAR_XGBA_WORLD_ID, 2
-	buffernumberstring STR_VAR_1, VAR_XGBA_WORLD_ID
+	copyvar VAR_XGBA_TARGET_WORLD, VAR_RESULT
+	addvar VAR_XGBA_TARGET_WORLD, 2
+	buffernumberstring STR_VAR_1, VAR_XGBA_TARGET_WORLD
 	msgbox XgbaTestTown_Text_NextWorld, MSGBOX_DEFAULT
 	release
 	end
