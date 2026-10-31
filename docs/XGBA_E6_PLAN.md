@@ -1,5 +1,18 @@
 # XGBA E6: rapid full-world virtualization plan
 
+## 2026-10-31: E6 optimized PC V2 save format implemented, pending gameplay acceptance
+
+**Engineering decision after adversarial review:** The legacy PC storage system was functionally correct but repeatedly rewrote/checksummed two ~270KB all-page banks. User measured page switch **6–7 seconds** at 5× fast-forward; world change **3–4 seconds** at 5×. No more repeated optimization test waves for foreseeable bottlenecks. The optimized design isolates every 33,744-byte PC page in separate CRC32 A/B records and keeps tiny A/B metadata for selected page. A ROM-resident CRC table, resident CRC/slot cache, and no-op writes for unchanged pages reduce repeated cost. Original native world snapshot records retain their format, with faster CRC and no padding fill.
+
+**Precise save allocation:** Original E6 sidecar file area 0x380000–0xE1FFFF is preserved as 20 worlds × 0x88000 bytes. Within each world: 8 pages ×2 slots ×0x8400 bytes = 0x84000, followed by 0x4000 for metadata/reserve. Page header 32B, data 33744B; metadata A/B at 0x84000 and 0x84040. Data magic `XGBAE6P\0`, metadata `XGBAE6M\0`, revision 2; independent page CRC and header CRC, A/B copy fallback. All 0x0F cartridge accesses remain volatile **8-bit**; current emulator does not guarantee 16/32-bit support. Total 112 boxes/world, 2240 across 20, still one native PokemonStorage in EWRAM.
+
+**Migration: offline ONLY.** The user already has a populated v1 E6 save (World 3 PAGE 8 BOX 1 Zigzagoon). The new ROM refuses legacy sidecars. With emulator completely closed, `tools/xgba_e6_box_upgrade.py SOURCE.sav DESTINATION.sav` reads/validates all legacy banks, produces separate create-only file and verifies every initialized page byte-for-byte, both A/B copies, untouched native/E5/E6 progression blocks, and RTC trailer. It does not replace the source. Keep a separate untouched backup before installing the new save; never use v1 ROM on optimized save. Refuse corrupted/unknown old formats; no transparent in-game migration or overwriting.
+
+**Automated tests:** `tests/test_xgba_e6_box_upgrade.py` tests Page 8 data retention, full 20×8 capacity, newest-old-bank corruption fallback, broken headers and mismatch rejection, preserved 16MiB+RTC, and both converted copies. Workflow `.github/workflows/xgba-e6.yml` runs the new tests alongside existing save tests and builds the E6 ROM. GREEN game C baseline before latest changes: https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41191853435; Python/full-capacity suite green: https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41192005262. Confirm *latest* CI after `c00a2631` and handoff commit before user test. Real-game optimization and cold restart **remain unverified**.
+
+**One focused user acceptance:** after backup/offline conversion/update/build, compare PAGE 1↔PAGE 8 switching latency and verify Page 8 Zigzagoon, switch Worlds 3/20 and inventory and compare latency, then native save/quit/reopen and verify Page 8. Targets from design: subsecond page switches and ~1s world switches at 5×, but measure actual results, don't promise. Preserve accepted E5 and the original E6 backup.
+
+
 ## 2026-10-31: STREAMED PC PAGES IMPLEMENTED; NATIVE BUILD GREEN, GAMEPLAY NEXT
 
 - **First full ROM build SUCCESS** with source changes through `3a622364`: https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41188529114. This includes `src/xgba_e6_boxes.c`, E6 world switch/save hook integration, and new **CHANGE PC PAGE** choice in the regular Pokémon Storage main menu with eight selectable pages. **This is code-verified, not user gameplay-verified.**
