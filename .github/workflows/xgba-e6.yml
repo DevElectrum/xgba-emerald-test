@@ -19,9 +19,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Python E6 migration and redundancy tests
-        run: python3 -m unittest discover -s tests -p 'test_xgba_e6_save.py' -v
+        run: python3 -m unittest discover -s tests -p 'test_xgba_e6_*.py' -v
       - name: Check Python syntax
-        run: python3 -m py_compile tools/xgba_e6_save.py tools/xgba_pack_e3.py tests/test_xgba_e6_save.py
+        run: python3 -m py_compile tools/xgba_e6_save.py tools/xgba_e6_box_upgrade.py tools/xgba_pack_e3.py tests/test_xgba_e6_save.py tests/test_xgba_e6_box_upgrade.py
 
   emerald-rom:
     runs-on: ubuntu-latest
