@@ -1,0 +1,293 @@
+#include "global.h"
+#include "event_data.h"
+#include "pokemon_storage_system.h"
+#include "xgba_e6.h"
+
+#define XGBA_E6_BASE ((volatile u8 *)0x0F000000)
+#define XGBA_E6_SLOT_SIZE 0x10000
+#define XGBA_E6_PAYLOAD_CAPACITY (XGBA_E6_SLOT_SIZE - 32)
+#define XGBA_E6_BANK_BASE 0xE0000
+#define XGBA_E6_BACKUP_HEADER 0xFDF000
+
+typedef char XgbaE6SnapshotFits[(sizeof(struct SaveBlock1) + sizeof(struct SaveBlock2)
+    + sizeof(struct PokemonStorage) <= XGBA_E6_PAYLOAD_CAPACITY) ? 1 : -1];
+
+static const u8 sXgbaE6Superblock[24] = {
+    'X', 'G', 'B', 'A', 'E', '6', 'S', 0,
+    2, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1,
+    0xB0, 0x2B, 0x5B, 0x12
+};
+
+static const u8 sXgbaE6RecordMagic[8] = {
+    'X', 'G', 'B', 'A', 'E', '6', 'W', 0
+};
+
+static u16 XgbaE6Read16(const volatile u8 *ptr)
+{
+    return (u16)ptr[0] | ((u16)ptr[1] << 8);
+}
+
+static u32 XgbaE6Read32(const volatile u8 *ptr)
+{
+    return (u32)ptr[0] | ((u32)ptr[1] << 8)
+        | ((u32)ptr[2] << 16) | ((u32)ptr[3] << 24);
+}
+
+static void XgbaE6Write16(u8 *ptr, u16 value)
+{
+    ptr[0] = value;
+    ptr[1] = value >> 8;
+}
+
+static void XgbaE6Write32(u8 *ptr, u32 value)
+{
+    ptr[0] = value;
+    ptr[1] = value >> 8;
+    ptr[2] = value >> 16;
+    ptr[3] = value >> 24;
+}
+
+static u32 XgbaE6CrcStep(u32 crc, u8 value)
+{
+    u32 i;
+
+    crc ^= value;
+    for (i = 0; i < 8; i++)
+    {
+        if (crc & 1)
+            crc = (crc >> 1) ^ 0xEDB88320;
+        else
+            crc >>= 1;
+    }
+    return crc;
+}
+
+static u32 XgbaE6Crc(const volatile u8 *src, u32 count)
+{
+    u32 crc = 0xFFFFFFFF;
+    u32 i;
+
+    for (i = 0; i < count; i++)
+        crc = XgbaE6CrcStep(crc, src[i]);
+    return crc ^ 0xFFFFFFFF;
+}
+
+static bool8 XgbaE6HeaderValid(u32 offset)
+{
+    const volatile u8 *ptr = XGBA_E6_BASE + offset;
+    u32 i;
+
+    for (i = 0; i < sizeof(sXgbaE6Superblock); i++)
+    {
+        if (ptr[i] != sXgbaE6Superblock[i])
+            return FALSE;
+    }
+    return TRUE;
+}
+
+bool8 XgbaE6Available(void)
+{
+    const volatile u8 *rom = (const volatile u8 *)0x08000000;
+    const u8 tag[7] = { 'X', 'G', 'B', 'A', '2', '5', '6' };
+    u32 i;
+
+    if (rom[0xBC] != 0xE6)
+        return FALSE;
+    for (i = 0; i < sizeof(tag); i++)
+    {
+        if (rom[0xB5 + i] != tag[i])
+            return FALSE;
+    }
+    return XgbaE6HeaderValid(0) || XgbaE6HeaderValid(XGBA_E6_BACKUP_HEADER);
+}
+
+static volatile u8 *XgbaE6Slot(u8 world, u8 slot)
+{
+    u32 offset = XGBA_E6_BANK_BASE + ((world - 1) * 2 + slot) * XGBA_E6_SLOT_SIZE;
+    return XGBA_E6_BASE + offset;
+}
+
+static u32 XgbaE6SnapshotSize(void)
+{
+    return sizeof(struct SaveBlock1) + sizeof(struct SaveBlock2) + sizeof(struct PokemonStorage);
+}
+
+static u8 XgbaE6SnapshotByte(u32 index)
+{
+    if (index < sizeof(struct SaveBlock1))
+        return ((const u8 *)gSaveBlock1Ptr)[index];
+    index -= sizeof(struct SaveBlock1);
+
+    if (index < sizeof(struct SaveBlock2))
+        return ((const u8 *)gSaveBlock2Ptr)[index];
+    index -= sizeof(struct SaveBlock2);
+
+    return ((const u8 *)gPokemonStoragePtr)[index];
+}
+
+// 0 = unused, 1 = valid record, -1 = damaged record.
+static s32 XgbaE6InspectSlot(u8 world, u8 slot, u32 *sequence, u32 *length)
+{
+    const volatile u8 *record = XgbaE6Slot(world, slot);
+    u32 i;
+
+    for (i = 0; i < XGBA_E6_SLOT_SIZE; i++)
+    {
+        if (record[i] != 0xFF)
+            break;
+    }
+    if (i == XGBA_E6_SLOT_SIZE)
+        return 0;
+
+    for (i = 0; i < sizeof(sXgbaE6RecordMagic); i++)
+    {
+        if (record[i] != sXgbaE6RecordMagic[i])
+            return -1;
+    }
+    if (XgbaE6Read16(record + 8) != 2 || XgbaE6Read16(record + 10) != world)
+        return -1;
+
+    *sequence = XgbaE6Read32(record + 12);
+    *length = XgbaE6Read32(record + 16);
+    if (*sequence == 0 || *length > XGBA_E6_PAYLOAD_CAPACITY
+        || XgbaE6Read32(record + 28) != 0)
+        return -1;
+
+    if (XgbaE6Crc(record, 24) != XgbaE6Read32(record + 24))
+        return -1;
+    if (XgbaE6Crc(record + 32, *length) != XgbaE6Read32(record + 20))
+        return -1;
+    return 1;
+}
+
+static s32 XgbaE6SelectWorld(u8 world, u8 *slot, u32 *sequence, u32 *length)
+{
+    u32 firstSeq = 0;
+    u32 secondSeq = 0;
+    u32 firstLen = 0;
+    u32 secondLen = 0;
+    s32 first = XgbaE6InspectSlot(world, 0, &firstSeq, &firstLen);
+    s32 second = XgbaE6InspectSlot(world, 1, &secondSeq, &secondLen);
+
+    if (first == 1 && (second != 1 || firstSeq >= secondSeq))
+    {
+        *slot = 0;
+        *sequence = firstSeq;
+        *length = firstLen;
+        return 1;
+    }
+    if (second == 1)
+    {
+        *slot = 1;
+        *sequence = secondSeq;
+        *length = secondLen;
+        return 1;
+    }
+    if (first < 0 || second < 0)
+        return -1;
+    *slot = 1;
+    *sequence = 0;
+    *length = 0;
+    return 0;
+}
+
+bool8 XgbaE6SnapshotWorld(u8 world)
+{
+    u8 slot;
+    u8 header[32];
+    u32 sequence;
+    u32 oldLength;
+    u32 length;
+    u32 i;
+    u32 crc;
+    volatile u8 *record;
+    s32 status;
+
+    if (world < 1 || world > 20 || !XgbaE6Available())
+        return FALSE;
+
+    status = XgbaE6SelectWorld(world, &slot, &sequence, &oldLength);
+    if (status < 0 || sequence == 0xFFFFFFFF)
+        return FALSE;
+
+    record = XgbaE6Slot(world, status == 1 ? 1 - slot : 0);
+    length = XgbaE6SnapshotSize();
+
+    for (i = 0; i < 32; i++)
+        record[i] = 0xFF;
+
+    crc = 0xFFFFFFFF;
+    for (i = 0; i < length; i++)
+    {
+        u8 value = XgbaE6SnapshotByte(i);
+        record[32 + i] = value;
+        crc = XgbaE6CrcStep(crc, value);
+    }
+    for (; i < XGBA_E6_PAYLOAD_CAPACITY; i++)
+        record[32 + i] = 0xFF;
+
+    memset(header, 0, sizeof(header));
+    memcpy(header, sXgbaE6RecordMagic, sizeof(sXgbaE6RecordMagic));
+    XgbaE6Write16(header + 8, 2);
+    XgbaE6Write16(header + 10, world);
+    XgbaE6Write32(header + 12, sequence + 1);
+    XgbaE6Write32(header + 16, length);
+    XgbaE6Write32(header + 20, crc ^ 0xFFFFFFFF);
+    XgbaE6Write32(header + 24, XgbaE6Crc(header, 24));
+
+    for (i = 8; i < sizeof(header); i++)
+        record[i] = header[i];
+    for (i = 0; i < sizeof(sXgbaE6RecordMagic); i++)
+        record[i] = header[i];
+
+    return TRUE;
+}
+
+s32 XgbaE6AuditWorld(u8 world)
+{
+    u8 slot;
+    u32 sequence;
+    u32 length;
+    s32 status;
+
+    if (world < 1 || world > 20 || !XgbaE6Available())
+        return -1;
+
+    status = XgbaE6SelectWorld(world, &slot, &sequence, &length);
+    if (status == 1 && length != XgbaE6SnapshotSize())
+        return -1;
+    return status;
+}
+
+static u8 XgbaE6CurrentWorld(void)
+{
+    u16 world = VarGet(VAR_XGBA_WORLD_ID);
+
+    if (world < 2 || world > 20)
+        return 1;
+    return world;
+}
+
+void XgbaE6SpecialSnapshot(void)
+{
+    gSpecialVar_Result = 0;
+    if (!XgbaE6Available())
+        return;
+
+    if (XgbaE6SnapshotWorld(XgbaE6CurrentWorld()))
+        gSpecialVar_Result = 1;
+    else
+        gSpecialVar_Result = 3;
+}
+
+void XgbaE6SpecialAudit(void)
+{
+    s32 result = XgbaE6AuditWorld(XgbaE6CurrentWorld());
+
+    if (result == 1)
+        gSpecialVar_Result = 1;
+    else if (result == 0)
+        gSpecialVar_Result = 2;
+    else
+        gSpecialVar_Result = 4;
+}
