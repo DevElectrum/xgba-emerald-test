@@ -245,12 +245,26 @@ def main():
         for world in range(1, WORLD_COUNT + 1):
             sequence, slot, payload = read_world(data, world)
             print(f"E6 World {world:2d}: sequence={sequence}, slot={slot}, size={len(payload)}")
+        import xgba_e6_box_upgrade as boxes
         for world in range(1, WORLD_COUNT + 1):
             box = read_box_bank(data, world)
             if box:
                 seq, slot, page, mask, payload = box
-                print(f"E6 PC World {world:2d}: page={page + 1}/8, "
+                print(f"E6 PC v1 World {world:2d}: page={page + 1}/8, "
                       f"pages_initialized={mask.bit_count()}, seq={seq}, slot={slot}")
+                continue
+            metadata = boxes.read_meta(data, world)
+            if metadata is not None:
+                seq, slot, page = metadata
+                active = boxes.read_page(data, world, page)
+                if active is None:
+                    raise E6SaveError(f"World {world}: v2 active PC page is unreadable")
+                count = 0
+                for index in range(8):
+                    if boxes.read_page(data, world, index) is not None:
+                        count += 1
+                print(f"E6 PC v2 World {world:2d}: page={page + 1}/8, "
+                      f"pages_initialized={count}, seq={seq}, slot={slot}")
         legacy = bytearray(data[:E5_SIZE])
         legacy[PRIMARY_HEADER:PRIMARY_HEADER + HEADER_SIZE] = e5.build_superblock()
         for world in range(1, WORLD_COUNT + 1):
