@@ -56,6 +56,9 @@ def main():
             originals.append((group, name, original))
 
     original_ids = {entry["id"] for _, _, entry in originals}
+    original_names = set()
+    for group, name, original in originals:
+        original_names.add(name)
     if len(original_ids) != len(originals):
         raise ValueError("Duplicate original map IDs")
     translated_ids = {map_id: clone_map_id(map_id) for map_id in original_ids}
@@ -106,7 +109,7 @@ def main():
         # Neutralizing every callback leaves gyms and story triggers inert.
         shared = original.get("shared_events_map")
         if shared is not None:
-            if shared not in {entry[1] for entry in originals}:
+            if shared not in original_names:
                 raise ValueError(f"{name}: unknown shared events map {shared}")
             clone["shared_events_map"] = MAP_PREFIX + shared
         else:
