@@ -63,5 +63,41 @@ class E6SaveTests(unittest.TestCase):
             e6.read_world(save, 21)
 
 
+    def test_box_banks_dual_copy_and_112_box_layout(self):
+        import struct
+        import zlib
+
+        self.assertEqual(e6.BOX_PAGES * 14, 112)
+        self.assertEqual(e6.BOX_PAGE_SIZE, 33744)
+        self.assertLess(e6.box_slot_offset(20, 1) + e6.BOX_SLOT_SIZE, e6.BACKUP_HEADER)
+        save = bytearray(e6.initialize(bytes(e6.NATIVE_SIZE)))
+        world = 3
+        pages = bytearray(bytes(e6.BOX_DATA_SIZE))
+        pages[0] = 23
+
+        def write_slot(slot, sequence, active_page):
+            data_crc = zlib.crc32(pages)
+            prefix = struct.pack(
+                "<8sHHIIIII",
+                e6.BOX_MAGIC, e6.BOX_VERSION, world, sequence,
+                active_page, 1 | (1 << active_page), e6.BOX_DATA_SIZE, data_crc,
+            )
+            header = prefix + struct.pack("<I", zlib.crc32(prefix))
+            offset = e6.box_slot_offset(world, slot)
+            save[offset:offset + len(header)] = header
+            save[offset + len(header):offset + len(header) + len(pages)] = pages
+
+        self.assertIsNone(e6.read_box_bank(save, world))
+        write_slot(0, 1, 0)
+        self.assertEqual(e6.read_box_bank(save, world)[:4], (1, 0, 0, 1))
+
+        pages[7 * e6.BOX_PAGE_SIZE] = 99
+        write_slot(1, 2, 7)
+        self.assertEqual(e6.read_box_bank(save, world)[:4], (2, 1, 7, 129))
+        self.assertEqual(e6.read_box_bank(save, world)[4][7 * e6.BOX_PAGE_SIZE], 99)
+        save[e6.box_slot_offset(world, 1) + e6.BOX_HEADER_SIZE] ^= 0x11
+        self.assertEqual(e6.read_box_bank(save, world)[:4], (1, 0, 0, 1))
+
+
 if __name__ == "__main__":
     unittest.main()
