@@ -1,6 +1,6 @@
 # E5: Expand XGBA save storage without compromising E4
 
-**Status (2026-10-30): E5 experimental branches created; 1 MiB save-format prototype and automated corruption-recovery tests pass. E5 gameplay integration is NOT accepted yet.**
+**Status (2026-10-31): E5 proof-of-concept ACCEPTED in user gameplay.** World 20 and World 3 independently wrote and audited E5 records, retained matching records across switching worlds, and passed normal save, complete emulator shutdown, restart, and re-audit. This verifies the real guest→emulator→disk→guest byte-storage path for the current 16-byte E4 event snapshots. Full per-world game saves, PC box expansion, maximum payload stress tests, and interrupted-write recovery are **not** accepted.
 
 ## Existing save-sector audit
 
@@ -45,7 +45,7 @@ The original three E4 NPCs and world-selection behavior remain.
 The original E4 state always continues to reside in standard SaveBlock1 and normal Emerald flash. E5 snapshotting is explicit and does not replace native saving.
 This is **not** a full per-world save migration or independent storyline implementation.
 
-### Live acceptance protocol (after the E5 ROM build CI passes)
+### User-verified live acceptance protocol (passed 2026-10-31)
 
 1. Preserve the user's working E4 ROM and `.sav` **as independent backups**. Do not run E5 against that save basename.
 2. On the E5 branch, build `make e5`. If the intended E5 ROM filename already exists, move the old experimental artifact aside first; the packer refuses accidental replacement.
@@ -55,7 +55,7 @@ This is **not** a full per-world save migration or independent storyline impleme
 6. Save normally, fully exit the emulator, reopen, and audit World 20 and World 3 again.
 7. Inspect the resulting `.sav` with `python3 tools/xgba_e5_save.py inspect xgba-emerald-e5.sav`; both world records should be valid. Any offline corruption test must run on **another copy**, not on the primary E5 experiment.
 
-No manual user test is requested until both latest branch builds succeed. Emulator unit tests are not a substitute for a full gameplay save/exit/restart.
+The user completed steps 5–6 successfully on 2026-10-31 after fixing NPC reachability. Host-format inspection in step 7 remains a separate optional diagnostic; do not claim it was run. Emulator unit tests also passed, but the interactive save/exit/restart result is the first game-level E5 persistence proof.
 
 ## Two isolated branches
 
