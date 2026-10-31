@@ -1,5 +1,18 @@
 # XGBA Emerald experiment: living Astra handoff
 
+## 2026-10-31: E6 EXECUTION checkpoint; feature branches and real code
+
+**The earlier E6 "not yet implemented" statements in this file are historical. E6 IS NOW IN PROGRESS.** Read `docs/XGBA_E6_PLAN.md` first. User wants **Regieleki speed**, no exhaustive QA, but explicit copies of accepted E5 save and frequent handoff commits.
+
+- **Branches created:** game `DevElectrum/xgba-emerald-test@xgba/e6-world-virtualization` from accepted E5; emulator `DevElectrum/xgba@xgba/e6-large-save` from accepted E5. No edits to masters or `DevElectrum/grand-anthology`.
+- **Emulator done + verified:** versioned 16 MiB save extension (0x0F) with v2 magic, dual CRC32 headers, E5 compatibility retained. CI **success** https://github.com/DevElectrum/xgba/actions/runs/41182582688.
+- **Game source created:** `tools/xgba_pack_e3.py` supports `--e6-save`, `Makefile` adds `make e6` for `xgba-emerald-e6.gba` (64 MiB revision E6). `tools/xgba_e6_save.py` safe `init` from native E4 or E5 to a distinct 16 MiB E6 save, preserving native flash / legacy E5 world records / RTC trailer. Unit tests `tests/test_xgba_e6_save.py` (53,380-byte record, dual-copy fallback, old record preservation) are GREEN on current game E6 workflow; game ROM native CI was running during this checkpoint. `docs/XGBA_E6_PLAN.md` gives full format and implementation details.
+- **Game C implemented but NOT user tested:** `src/xgba_e6.c` / `include/xgba_e6.h` byte-stream the 15,752-byte SaveBlock1, 3,884-byte SaveBlock2, and 33,744-byte PokemonStorage = 53,380 bytes per world into independent two-slot 64 KiB E6 records from file offset 0x100000. CRC verified. `data/specials.inc` and `data/maps/XgbaTestTown/scripts.inc` change known accessible E5 snapshot/audit NPCs to report E6 full records and automate checkpoint on exit/restore on entry. `src/save.c` refreshes E6 record on normal native saves inside a cloned world. Field transition restore skips SaveBlock1 navigation offset 0..0x233 and retains the chosen world ID, then refreshes party/bag. First visit seeded from preserved baseline World1 record. This is high-risk and may require rapid gameplay bug fixes.
+- **Important remaining:** Game ROM CI success and joint XGBA runtime NOT YET established for latest C changes. There are still only 14 native boxes, no 100-box GUI, cloned maps still have suppressed story NPCs/events. An E6 bank can hold full existing PokémonStorage; that is *not* a massive box system. Preserve good E5 saves and don't ask the user to repeat previously accepted E5 tests.
+- **User test UX:** nearly always three commands: update/build local emulator and game E6 branches; safe copy-only save migration `python3 tools/xgba_e6_save.py init xgba-emerald-e5.sav xgba-emerald-e6.sav`; launch `~/Projects/xgba/build-xgba-gui/qt/mgba-qt ~/Projects/xgba-emerald-test/xgba-emerald-e6.gba`. Save copies never overwrite.
+- **Next action:** review `.github/workflows/xgba-e6.yml` run results for latest runtime C changes and fix compiler errors. Then request one World20/World3 switching smoke test and record actual results, not assumptions. Update both living handoffs and agent guidance again at the next substantial milestone.
+
+
 ## CURRENT NEXT ASTRA CHECKPOINT: 2026-10-31 (E6 planned, no E6 code started)
 
 **Immediate instruction:** Read [`docs/XGBA_E6_PLAN.md`](XGBA_E6_PLAN.md) and [`AGENTS.md`](../AGENTS.md), plus companion emulator handoff and AGENTS. User explicitly rejected conservative flags-only E6 in favor of an ambitious, fast-moving E6. **Regieleki: speed is god.** This is a passion project: take large steps, run minimal CI and selected gameplay smoke tests, use backups, and accept temporary breakage rather than designing a huge QA bureaucracy.
