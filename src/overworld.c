@@ -565,8 +565,30 @@ const struct MapLayout *GetMapLayout(void)
     return NULL;
 }
 
+// All warp paths converge here, including Fly, whiteout, Dive and dynamic
+// return locations that bypass SetWarpDestination().
+static void XgbaE6NormalizeWarp(struct WarpData *destination)
+{
+    u16 world;
+
+    if (gSaveBlock1Ptr == NULL)
+        return;
+    world = VarGet(VAR_XGBA_WORLD_ID);
+    if (world < 2 || world > 20
+        || gSaveBlock1Ptr->location.mapGroup < 34
+        || gSaveBlock1Ptr->location.mapGroup >= 68)
+        return;
+    if (destination->mapGroup < 0 || destination->mapGroup >= 34)
+        return;
+    if (destination->mapGroup == MAP_GROUP(MAP_XGBA_TEST_TOWN)
+        && destination->mapNum == MAP_NUM(MAP_XGBA_TEST_TOWN))
+        return;
+    destination->mapGroup += 34;
+}
+
 void ApplyCurrentWarp(void)
 {
+    XgbaE6NormalizeWarp(&sWarpDestination);
     gLastUsedWarp = gSaveBlock1Ptr->location;
     gSaveBlock1Ptr->location = sWarpDestination;
     sFixedDiveWarp = sDummyWarpData;
@@ -660,21 +682,8 @@ void WarpIntoMap(void)
 
 void SetWarpDestination(s8 mapGroup, s8 mapNum, s8 warpId, s8 x, s8 y)
 {
-    // E6: original story scripts have hard-coded original Hoenn map IDs.
-    // While inside a clone, send those scripted warps to the counterpart
-    // in the cloned map network. The lab portal is intentionally excluded.
-    // All 34 cloned groups retain the original map numbering.
-    if (gSaveBlock1Ptr != NULL
-        && VarGet(VAR_XGBA_WORLD_ID) >= 2
-        && VarGet(VAR_XGBA_WORLD_ID) <= 20
-        && gSaveBlock1Ptr->location.mapGroup >= 34
-        && gSaveBlock1Ptr->location.mapGroup < 68
-        && mapGroup >= 0 && mapGroup < 34
-        && !(mapGroup == MAP_GROUP(MAP_XGBA_TEST_TOWN)
-             && mapNum == MAP_NUM(MAP_XGBA_TEST_TOWN)))
-        mapGroup += 34;
-
     SetWarpData(&sWarpDestination, mapGroup, mapNum, warpId, x, y);
+    XgbaE6NormalizeWarp(&sWarpDestination);
 }
 
 void SetWarpDestinationToMapWarp(s8 mapGroup, s8 mapNum, s8 warpId)

@@ -363,8 +363,11 @@ void XgbaE6SpecialEnterWorld(void)
 void XgbaE6SpecialLeaveWorldOne(void)
 {
     gSpecialVar_Result = 4;
-    if (XgbaE6CurrentWorld() != 1 || !XgbaE6Available())
+    if (!XgbaE6Available() || gSaveBlock1Ptr->location.mapGroup >= 34)
         return;
+    // The original map, not an old hub selection variable, identifies World 1.
+    // Normalize before its world snapshot so a stale selector cannot leak.
+    VarSet(VAR_XGBA_WORLD_ID, 1);
     if (!XgbaE6PrepareCurrentState())
         return;
     if (!XgbaE6BoxesCheckpointNativeWorldOne())

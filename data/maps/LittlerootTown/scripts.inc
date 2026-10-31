@@ -981,7 +981,7 @@ LittlerootTown_EventScript_XgbaPortalReady:
 	end
 
 LittlerootTown_Text_XgbaStorageError:
-	.string "World 1 could not be saved.\\n"
+	.string "World 1 could not be saved.\n"
 	.string "The portal will stay closed.$"
 
 LittlerootTown_Text_XgbaPortal:
