@@ -78,6 +78,47 @@ class CloneEventTests(unittest.TestCase):
 
         self.assertEqual(original_count, 518)
 
+    def test_every_cloned_warp_and_connection_stays_in_its_world(self):
+        generator.main()
+        groups = json.loads((ROOT / "data/maps/map_groups.json").read_text())
+        original_count = 0
+        total_warps = 0
+        total_connections = 0
+
+        for group in groups["group_order"][:34]:
+            for name in groups[group]:
+                if name == "XgbaTestTown":
+                    continue
+
+                original_count += 1
+                original = json.loads((ROOT / "data/maps" / name / "map.json").read_text())
+                clone = json.loads((ROOT / "data/maps" / ("Xgba2_" + name) / "map.json").read_text())
+
+                for index, source in enumerate(original.get("warp_events", [])):
+                    expected = dict(source)
+                    if expected["dest_map"] not in ("MAP_DYNAMIC", "MAP_UNDEFINED"):
+                        expected["dest_map"] = generator.clone_map_id(expected["dest_map"])
+                    actual = clone.get("warp_events", [])[index]
+                    self.assertEqual(actual, expected, (name, "warp", index))
+                    total_warps += 1
+
+                self.assertEqual(len(clone.get("warp_events", [])),
+                                 len(original.get("warp_events", [])), name)
+
+                for index, source in enumerate(original.get("connections") or []):
+                    expected = dict(source)
+                    expected["map"] = generator.clone_map_id(expected["map"])
+                    actual = (clone.get("connections") or [])[index]
+                    self.assertEqual(actual, expected, (name, "connection", index))
+                    total_connections += 1
+
+                self.assertEqual(len(clone.get("connections") or []),
+                                 len(original.get("connections") or []), name)
+
+        self.assertEqual(original_count, 518)
+        self.assertGreater(total_warps, 1000)
+        self.assertGreater(total_connections, 100)
+
 
 if __name__ == "__main__":
     unittest.main()
