@@ -6,6 +6,7 @@
 #include "task.h"
 #include "decompress.h"
 #include "load_save.h"
+#include "xgba_e6.h"
 #include "overworld.h"
 #include "pokemon_storage_system.h"
 #include "trainer_hill.h"
@@ -760,6 +761,8 @@ u8 HandleSavingData(u8 saveType)
         break;
     }
     gTrainerHillVBlankCounter = backupVar;
+    if (saveType == SAVE_NORMAL && !gDamagedSaveSectors)
+        XgbaE6CheckpointOnSave();
     return 0;
 }
 
