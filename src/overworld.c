@@ -3,6 +3,7 @@
 #include "overworld.h"
 #include "xgba_world_e3.h"
 #include "xgba_world_e3_data.h"
+#include "xgba_e7_data.h"
 #include "battle_pyramid.h"
 #include "battle_setup.h"
 #include "berry.h"
@@ -550,7 +551,9 @@ const struct MapLayout *XgbaGetWorldLayout(const struct MapLayout *original, u16
         return original;
 
     index = layoutId - XGBA_E3_FIRST_LAYOUT_ID;
-    offset = XGBA_E3_START_OFFSET + (worldId - XGBA_E3_FIRST_WORLD) * XGBA_E3_WORLD_STRIDE;
+    // E7 relocates five complete, actually rendered worlds to upper ROM
+    // windows. The remaining 13 stay at their tested E6 addresses.
+    offset = sXgbaE7WorldBases[worldId - XGBA_E3_FIRST_WORLD];
     layout = connection ? &sXgbaConnectionWorldLayout : &sXgbaActiveWorldLayout;
     *layout = *original;
     layout->border = (const u16 *)(0x10000000u + offset + sXgbaE3BorderOffsets[index]);

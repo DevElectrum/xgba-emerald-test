@@ -442,3 +442,15 @@ e6:
 	python3 tools/xgba_pack_e3.py pack --e6-save --output build/xgba-e6-package-stage/xgba-emerald-e6.gba
 	python3 tools/xgba_pack_e3.py verify --e6-save --output build/xgba-e6-package-stage/xgba-emerald-e6.gba
 	mv -f build/xgba-e6-package-stage/xgba-emerald-e6.gba xgba-emerald-e6.gba
+
+.PHONY: e7
+e7:
+	python3 tools/xgba_generate_e2.py
+	python3 tools/xgba_generate_e3.py
+	python3 tools/xgba_pack_e7.py generate
+	$(MAKE) -j2 all
+	@mkdir -p build/xgba-e7-package-stage
+	@rm -f build/xgba-e7-package-stage/xgba-emerald-e7.gba
+	python3 tools/xgba_pack_e7.py pack --output build/xgba-e7-package-stage/xgba-emerald-e7.gba
+	python3 tools/xgba_pack_e7.py verify --output build/xgba-e7-package-stage/xgba-emerald-e7.gba
+	mv -f build/xgba-e7-package-stage/xgba-emerald-e7.gba xgba-emerald-e7.gba

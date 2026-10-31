@@ -549,3 +549,4 @@ gSpecials::
 	def_special XgbaE6SpecialLeaveWorld
 	def_special XgbaE6SpecialLeaveWorldOne
 	def_special XgbaE6SpecialReturnToWorldOne
+	def_special XgbaE7SpecialProbe

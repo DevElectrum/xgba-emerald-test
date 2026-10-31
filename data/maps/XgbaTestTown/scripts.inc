@@ -20,16 +20,31 @@ XgbaTestTown_EventScript_ReturnReady:
 	end
 
 XgbaTestTown_EventScript_Witness::
-	msgbox XgbaTestTown_Text_Witness, MSGBOX_NPC
+	lock
+	faceplayer
+	special XgbaE7SpecialProbe
+	compare VAR_RESULT, 1
+	goto_if_eq XgbaTestTown_EventScript_E7ProbeSuccess
+	msgbox XgbaTestTown_Text_E7ProbeFailure, MSGBOX_DEFAULT
+	release
+	end
+
+XgbaTestTown_EventScript_E7ProbeSuccess:
+	msgbox XgbaTestTown_Text_E7ProbeSuccess, MSGBOX_DEFAULT
+	release
 	end
 
 XgbaTestTown_Text_Return:
 	.string "The original LITTLEROOT TOWN is\n"
 	.string "one experiment away. Going back!$"
 
-XgbaTestTown_Text_Witness:
-	.string "You're in XGBA TEST TOWN!\n"
-	.string "This map lives beyond 32 MB!$"
+XgbaTestTown_Text_E7ProbeSuccess:
+	.string "E7: 256 MiB ROM address test!\n"
+	.string "All 5 remote windows PASS!$"
+
+XgbaTestTown_Text_E7ProbeFailure:
+	.string "E7: ROM address check FAILED.\n"
+	.string "Do not trust this build!$"
 
 
 Xgba2Neutral_MapScripts::
