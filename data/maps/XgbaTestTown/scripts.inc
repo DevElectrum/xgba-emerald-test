@@ -70,7 +70,7 @@ Xgba2Littleroot_EventScript_ReturnReady:
 	end
 
 XgbaTestTown_Text_WorldStateError:
-	.string "E6 world bank refused the switch!\\n"
+	.string "E6 world bank refused the switch!\n"
 	.string "Your progress was not replaced.$"
 
 XgbaTestTown_Text_ToHoenn2:
