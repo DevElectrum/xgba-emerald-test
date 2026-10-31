@@ -118,7 +118,7 @@ static bool8 CheckFeebas(void)
     u8 route119Section = 0;
     u16 spotId;
 
-    if (gSaveBlock1Ptr->location.mapGroup == MAP_GROUP(MAP_ROUTE119)
+    if (XgbaCanonicalEncounterGroup(gSaveBlock1Ptr->location.mapGroup) == MAP_GROUP(MAP_ROUTE119)
      && gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_ROUTE119))
     {
         GetXYCoordsOneStepInFrontOfPlayer(&x, &y);
@@ -302,17 +302,18 @@ static u8 ChooseWildMonLevel(const struct WildPokemon *wildPokemon)
     return min + rand;
 }
 
+// Gameplay tables use canonical Hoenn groups; clones have +34 group IDs.
+static s16 XgbaCanonicalEncounterGroup(s16 group)
+{
+    if (group >= 34 && group < 68)
+        return group - 34;
+    return group;
+}
+
 static u16 GetCurrentMapWildMonHeaderId(void)
 {
     u16 i;
-    s16 mapGroup = gSaveBlock1Ptr->location.mapGroup;
-
-    // E6 clones all 34 original map groups, preserving their map numbers.
-    // Reuse native Hoenn encounter tables rather than cloning 135 entries.
-    // This works for all selectable worlds 2-20 because they share the
-    // same cloned map groups and differ only in their loaded world layout.
-    if (mapGroup >= 34 && mapGroup < 68)
-        mapGroup -= 34;
+    s16 mapGroup = XgbaCanonicalEncounterGroup(gSaveBlock1Ptr->location.mapGroup);
 
     for (i = 0; ; i++)
     {
@@ -490,7 +491,8 @@ static bool8 DoMassOutbreakEncounterTest(void)
 {
     if (gSaveBlock1Ptr->outbreakPokemonSpecies != SPECIES_NONE
      && gSaveBlock1Ptr->location.mapNum == gSaveBlock1Ptr->outbreakLocationMapNum
-     && gSaveBlock1Ptr->location.mapGroup == gSaveBlock1Ptr->outbreakLocationMapGroup)
+     && XgbaCanonicalEncounterGroup(gSaveBlock1Ptr->location.mapGroup)
+         == XgbaCanonicalEncounterGroup(gSaveBlock1Ptr->outbreakLocationMapGroup))
     {
         if (Random() % 100 < gSaveBlock1Ptr->outbreakPokemonProbability)
             return TRUE;
@@ -548,7 +550,7 @@ static bool8 AllowWildCheckOnNewMetatile(void)
 
 static bool8 AreLegendariesInSootopolisPreventingEncounters(void)
 {
-    if (gSaveBlock1Ptr->location.mapGroup != MAP_GROUP(MAP_SOOTOPOLIS_CITY)
+    if (XgbaCanonicalEncounterGroup(gSaveBlock1Ptr->location.mapGroup) != MAP_GROUP(MAP_SOOTOPOLIS_CITY)
      || gSaveBlock1Ptr->location.mapNum != MAP_NUM(MAP_SOOTOPOLIS_CITY))
     {
         return FALSE;
