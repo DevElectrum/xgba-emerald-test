@@ -1,5 +1,18 @@
 # XGBA Emerald experiment: living Astra handoff
 
+## 2026-10-31: E6 WORLD 3 / WORLD 20 POKÉMON PARTY ISOLATION **USER-PROVEN**
+
+**This acceptance test PASSED in actual XGBA gameplay. Do not ask the user to repeat it.** User supplied five chronological screenshots, explicitly **no in-game saves or emulator restarts** between stages:
+
+1. World 20 starting party: **only Torchic Lv6 at 6/22 HP**.
+2. World 3 starting party: **Torchic Lv8 at 22/27 HP, Zigzagoon Lv3, Poochyena Lv2 and Poochyena Lv3** (four Pokémon).
+3. Caught a **new Zigzagoon Lv3, 5/15 HP** in World 3, yielding five Pokémon, with Torchic at 20/27 HP.
+4. Switched back to World 20: **still only Torchic Lv6 at 6/22 HP**. New World 3 Zigzagoon not present. No accidental party overwrite.
+5. Returned to World 3: **all five Pokémon retained**, including the new Zigzagoon Lv3, and prior HP values. Confirms correct per-world party snapshot/restore on repeated portal switching.
+
+**Accepted scope:** independent in-session party/capture/HP persistence through World 3↔World 20 switches, in addition to earlier E5 world snapshots and E6 save-format tests. **Not yet tested:** cold shutdown/relaunch retaining new E6 party changes (user did NOT save or restart during this test), PC boxes beyond existing 14, 20 full story playthroughs. Treat old user concern about a mysteriously appearing Torchic as baseline-inheritance behavior: screenshots show legitimate divergence, not evidence of shared-party contamination. User explicitly prefers fast progress; no more redundant party tests. Next E6 milestone: **streamed 112 PC boxes/world** (8 pages ×14 boxes) while preserving EWRAM, design recorded in `docs/XGBA_E6_PLAN.md`.
+
+
 ## 2026-10-31: Party-isolation screenshot, interpretation corrected (NO code changed)
 
 User supplied two Pokémon-party screenshots: World 20 shows only Torchic Lv.6, 6/22 HP; the other screenshot has Torchic Lv.8, 22/27 HP, Zigzagoon Lv.3 and two Poochyena (Lv.2 and Lv.3; latter 5/15 HP). User believes a Pokémon capture made Torchic appear in World 20, though they never personally acquired a starter there. **This is NOT sufficient evidence of a leak**. Source in `src/xgba_e6.c:XgbaE6SpecialEnterWorld` initializes any previously empty world from one saved World 1 baseline, which could legitimately contain Torchic Lv.6. Subsequent visits restore that world's own saved party. Screenshots show diverged parties: the newly caught low-HP Poochyena does not appear in World 20, consistent with correct isolation. Distinguish being *granted* a starter in World 20 from having starter *inherited* at baseline creation. If user explicitly confirms World 20 had an empty party in the E6 save immediately before capture and the appearance happened without first-time world initialization, investigate further. Avoid patching save serialization on unproven contamination; protect E6 save and E5 baseline. No runtime or source change made for this report.
