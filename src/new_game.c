@@ -45,6 +45,7 @@
 #include "mystery_gift.h"
 #include "union_room_chat.h"
 #include "constants/items.h"
+#include "xgba_e6.h"
 
 extern const u8 EventScript_ResetAllMapFlags[];
 
@@ -204,6 +205,7 @@ void NewGameInitData(void)
     WipeTrainerNameRecords();
     ResetTrainerHillResults();
     ResetContestLinkResults();
+    XgbaE6CaptureNewGameTemplate();
 }
 
 static void ResetMiniGamesRecords(void)

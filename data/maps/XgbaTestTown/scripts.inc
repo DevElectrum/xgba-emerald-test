@@ -43,9 +43,20 @@ XgbaTestTown_EventScript_ToHoenn2::
 	setvar VAR_XGBA_TARGET_WORLD, 2
 XgbaTestTown_EventScript_EnterSelectedWorld:
 	special XgbaE6SpecialEnterWorld
+	compare VAR_RESULT, 2
+	goto_if_eq XgbaTestTown_EventScript_EnterFreshWorld
 	compare VAR_RESULT, 1
 	goto_if_eq XgbaTestTown_EventScript_EnterWorldReady
 	msgbox XgbaTestTown_Text_WorldStateError, MSGBOX_DEFAULT
+	release
+	end
+
+XgbaTestTown_EventScript_EnterFreshWorld:
+	buffernumberstring STR_VAR_1, VAR_XGBA_WORLD_ID
+	msgbox XgbaTestTown_Text_FreshWorld, MSGBOX_DEFAULT
+	closemessage
+	warp MAP_XGBA2_INSIDE_OF_TRUCK, 2, 2
+	waitstate
 	release
 	end
 
@@ -80,6 +91,10 @@ Xgba2Littleroot_EventScript_ReturnReady:
 XgbaTestTown_Text_WorldStateError:
 	.string "E6 world bank refused the switch!\n"
 	.string "Your progress was not replaced.$"
+
+XgbaTestTown_Text_FreshWorld:
+	.string "WORLD {STR_VAR_1} is beginning\\n"
+	.string "a fresh Hoenn adventure!$"
 
 XgbaTestTown_Text_ToHoenn2:
 	.string "Hoenn has a second address!\n"

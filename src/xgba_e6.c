@@ -9,9 +9,14 @@
 #define XGBA_E6_PAYLOAD_CAPACITY (XGBA_E6_SLOT_SIZE - 32)
 #define XGBA_E6_BANK_BASE 0xE0000
 #define XGBA_E6_BACKUP_HEADER 0xFDF000
+// Reserve 128 KiB of the previously unused upper E6 save for a pristine
+// immutable new-game template. These are offsets in the 0x0F extension.
+#define XGBA_E6_TEMPLATE_BASE 0xE00000
 
 typedef char XgbaE6SnapshotFits[(sizeof(struct SaveBlock1) + sizeof(struct SaveBlock2)
     + sizeof(struct PokemonStorage) <= XGBA_E6_PAYLOAD_CAPACITY) ? 1 : -1];
+typedef char XgbaE6TemplateFits[
+    XGBA_E6_TEMPLATE_BASE + 2 * XGBA_E6_SLOT_SIZE <= XGBA_E6_BACKUP_HEADER ? 1 : -1];
 
 static u8 XgbaE6CurrentWorld(void);
 
@@ -23,6 +28,9 @@ static const u8 sXgbaE6Superblock[24] = {
 
 static const u8 sXgbaE6RecordMagic[8] = {
     'X', 'G', 'B', 'A', 'E', '6', 'W', 0
+};
+static const u8 sXgbaE6TemplateMagic[8] = {
+    'X', 'G', 'B', 'A', 'E', '6', 'T', 0
 };
 
 static u16 XgbaE6Read16(const volatile u8 *ptr)
@@ -209,6 +217,136 @@ static s32 XgbaE6SelectWorld(u8 world, u8 *slot, u32 *sequence, u32 *length)
     return -1;
 }
 
+// A new game's initialized save blocks form a reusable clean campaign start.
+// Unlike the live World 1 record, this template never receives checkpoints.
+static volatile u8 *XgbaE6TemplateSlot(u8 slot)
+{
+    return XGBA_E6_BASE + XGBA_E6_TEMPLATE_BASE + slot * XGBA_E6_SLOT_SIZE;
+}
+
+static s32 XgbaE6InspectTemplate(u8 slot, u32 *sequence)
+{
+    const volatile u8 *record = XgbaE6TemplateSlot(slot);
+    u32 i;
+
+    for (i = 0; i < sizeof(sXgbaE6TemplateMagic); i++)
+    {
+        if (record[i] != 0xFF)
+            break;
+    }
+    if (i == sizeof(sXgbaE6TemplateMagic))
+        return 0;
+    for (i = 0; i < sizeof(sXgbaE6TemplateMagic); i++)
+    {
+        if (record[i] != sXgbaE6TemplateMagic[i])
+            return -1;
+    }
+    if (XgbaE6Read16(record + 8) != 2 || XgbaE6Read16(record + 10) != 0
+        || XgbaE6Read32(record + 16) != XgbaE6SnapshotSize()
+        || XgbaE6Read32(record + 28) != 0
+        || XgbaE6Crc(record, 24) != XgbaE6Read32(record + 24))
+        return -1;
+    *sequence = XgbaE6Read32(record + 12);
+    if (*sequence == 0)
+        return -1;
+    if (XgbaE6Crc(record + 32, XgbaE6SnapshotSize())
+        != XgbaE6Read32(record + 20))
+        return -1;
+    return 1;
+}
+
+// 1=valid, 0=never captured, -1=present but unrecoverably damaged.
+static s32 XgbaE6SelectTemplate(u8 *slot)
+{
+    u32 firstSeq = 0, secondSeq = 0;
+    s32 first = XgbaE6InspectTemplate(0, &firstSeq);
+    s32 second = XgbaE6InspectTemplate(1, &secondSeq);
+
+    if (first == 1 && (second != 1 || firstSeq >= secondSeq))
+    {
+        *slot = 0;
+        return 1;
+    }
+    if (second == 1)
+    {
+        *slot = 1;
+        return 1;
+    }
+    if (first == 0 && second == 0)
+        return 0;
+    return -1;
+}
+
+void XgbaE6CaptureNewGameTemplate(void)
+{
+    u8 slot;
+    u8 header[32];
+    u32 i, length, crc;
+    volatile u8 *record;
+
+    if (!XgbaE6Available())
+        return;
+    // New Game must never overwrite an older campaign or a damaged template.
+    if (XgbaE6AuditWorld(1) != 0 || XgbaE6SelectTemplate(&slot) != 0)
+        return;
+
+    length = XgbaE6SnapshotSize();
+    crc = 0xFFFFFFFF;
+    for (i = 0; i < length; i++)
+        crc = XgbaE6CrcStep(crc, XgbaE6SnapshotByte(i));
+    crc ^= 0xFFFFFFFF;
+
+    for (slot = 0; slot < 2; slot++)
+    {
+        record = XgbaE6TemplateSlot(slot);
+        for (i = 0; i < 32; i++)
+            record[i] = 0xFF;
+        for (i = 0; i < length; i++)
+            record[32 + i] = XgbaE6SnapshotByte(i);
+
+        memset(header, 0, sizeof(header));
+        memcpy(header, sXgbaE6TemplateMagic, sizeof(sXgbaE6TemplateMagic));
+        XgbaE6Write16(header + 8, 2);
+        XgbaE6Write16(header + 10, 0);
+        XgbaE6Write32(header + 12, slot + 1);
+        XgbaE6Write32(header + 16, length);
+        XgbaE6Write32(header + 20, crc);
+        XgbaE6Write32(header + 24, XgbaE6Crc(header, 24));
+        for (i = 8; i < 32; i++)
+            record[i] = header[i];
+        for (i = 0; i < sizeof(sXgbaE6TemplateMagic); i++)
+            record[i] = header[i];
+    }
+}
+
+static bool8 XgbaE6RestoreTemplate(void)
+{
+    u8 slot;
+    u32 i;
+    u16 chosenWorld;
+    const volatile u8 *source;
+    u8 *save1 = (u8 *)gSaveBlock1Ptr;
+    u8 *save2 = (u8 *)gSaveBlock2Ptr;
+    u8 *storage = (u8 *)gPokemonStoragePtr;
+
+    if (XgbaE6SelectTemplate(&slot) != 1)
+        return FALSE;
+    source = XgbaE6TemplateSlot(slot) + 32;
+    chosenWorld = gSaveBlock1Ptr->vars[VAR_XGBA_WORLD_ID - VARS_START];
+
+    for (i = 0x234; i < sizeof(struct SaveBlock1); i++)
+        save1[i] = source[i];
+    for (i = 0; i < sizeof(struct SaveBlock2); i++)
+        save2[i] = source[sizeof(struct SaveBlock1) + i];
+    for (i = 0; i < sizeof(struct PokemonStorage); i++)
+        storage[i] = source[sizeof(struct SaveBlock1) + sizeof(struct SaveBlock2) + i];
+
+    gSaveBlock1Ptr->vars[VAR_XGBA_WORLD_ID - VARS_START] = chosenWorld;
+    LoadPlayerParty();
+    LoadPlayerBag();
+    return TRUE;
+}
+
 bool8 XgbaE6SnapshotWorld(u8 world)
 {
     u8 slot;
@@ -318,7 +456,10 @@ void XgbaE6SpecialEnterWorld(void)
     u8 world;
     u8 sourceWorld;
     s32 status;
+    s32 templateStatus;
+    u8 templateSlot;
     bool8 entered = FALSE;
+    bool8 fresh = FALSE;
 
     gSpecialVar_Result = 4;
     if (!XgbaE6Available())
@@ -340,16 +481,28 @@ void XgbaE6SpecialEnterWorld(void)
     status = XgbaE6AuditWorld(world);
     if (status == 0)
     {
-        // Never seed a fresh world from whichever clone is resident in the
-        // hub. World 1 must first have an independently checkpointed source.
-        if (XgbaE6AuditWorld(1) != 1)
+        // Pristine templates are captured once during NewGameInitData.
+        // Legacy populated E6 saves have no template, so preserve their
+        // established World 1 baseline rather than resetting old worlds.
+        templateStatus = XgbaE6SelectTemplate(&templateSlot);
+        if (templateStatus < 0)
             return;
-        if (XgbaE6RestoreWorld(1))
+        if (templateStatus == 1)
+        {
+            if (XgbaE6RestoreTemplate())
+            {
+                VarSet(VAR_XGBA_WORLD_ID, world);
+                if (XgbaE6SnapshotWorld(world) && XgbaE6BoxesEnterWorld(world))
+                {
+                    entered = TRUE;
+                    fresh = TRUE;
+                }
+            }
+        }
+        else if (XgbaE6AuditWorld(1) == 1 && XgbaE6RestoreWorld(1))
         {
             VarSet(VAR_XGBA_WORLD_ID, world);
-            if (XgbaE6PrepareCurrentState()
-                && XgbaE6SnapshotWorld(world)
-                && XgbaE6BoxesEnterWorld(world))
+            if (XgbaE6SnapshotWorld(world) && XgbaE6BoxesEnterWorld(world))
                 entered = TRUE;
         }
     }
@@ -371,7 +524,7 @@ void XgbaE6SpecialEnterWorld(void)
     }
     VarSet(VAR_XGBA_WORLD_ID, world);
     VarSet(VAR_XGBA_TARGET_WORLD, world);
-    gSpecialVar_Result = 1;
+    gSpecialVar_Result = fresh ? 2 : 1;
 }
 
 // Save original Hoenn before its resident state is replaced by a clone.

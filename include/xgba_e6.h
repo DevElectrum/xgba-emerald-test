@@ -2,6 +2,7 @@
 #define GUARD_XGBA_E6_H
 
 bool8 XgbaE6Available(void);
+void XgbaE6CaptureNewGameTemplate(void);
 bool8 XgbaE6SnapshotWorld(u8 world);
 bool8 XgbaE6RestoreWorld(u8 world);
 s32 XgbaE6AuditWorld(u8 world);
