@@ -15,6 +15,12 @@ static const u8 sXgbaE5Header[24] = {
     0xFE, 0xB1, 0x7D, 0x49
 };
 
+static const u8 sXgbaE6Header[24] = {
+    'X', 'G', 'B', 'A', 'E', '6', 'S', 0,
+    2, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1,
+    0xB0, 0x2B, 0x5B, 0x12
+};
+
 static const u8 sXgbaE5RecordMagic[8] = {
     'X', 'G', 'B', 'A', 'E', '5', 'W', 0
 };
@@ -64,14 +70,14 @@ static u32 XgbaE5Crc32(const volatile u8 *source, u32 length)
     return crc ^ 0xFFFFFFFF;
 }
 
-static bool8 XgbaE5HeaderValid(u32 offset)
+static bool8 XgbaE5HeaderValid(u32 offset, const u8 *expected)
 {
     u32 i;
     const volatile u8 *header = XGBA_E5_BASE + offset;
 
     for (i = 0; i < sizeof(sXgbaE5Header); i++)
     {
-        if (header[i] != sXgbaE5Header[i])
+        if (header[i] != expected[i])
             return FALSE;
     }
     return TRUE;
@@ -83,14 +89,19 @@ bool8 XgbaE5Available(void)
     const u8 tag[7] = { 'X', 'G', 'B', 'A', '2', '5', '6' };
     u32 i;
 
-    if (rom[0xBC] != 0xE5)
+    const u8 *header;
+    u32 backup;
+
+    if (rom[0xBC] != 0xE5 && rom[0xBC] != 0xE6)
         return FALSE;
     for (i = 0; i < sizeof(tag); i++)
     {
         if (rom[0xB5 + i] != tag[i])
             return FALSE;
     }
-    return XgbaE5HeaderValid(0) || XgbaE5HeaderValid(XGBA_E5_BACKUP_HEADER);
+    header = rom[0xBC] == 0xE6 ? sXgbaE6Header : sXgbaE5Header;
+    backup = rom[0xBC] == 0xE6 ? 0xFDF000 : XGBA_E5_BACKUP_HEADER;
+    return XgbaE5HeaderValid(0, header) || XgbaE5HeaderValid(backup, header);
 }
 
 static volatile u8 *XgbaE5Slot(u8 world, u8 slot)
