@@ -1,5 +1,23 @@
 # XGBA Emerald experiment: living Astra handoff
 
+## 2026-10-31: USER-MANDATED E(i) ADVERSARIAL DESIGN STANDARD + LATEST E6 GAMEPLAY ACCEPTANCE
+
+**Permanent project rule; mirrored in both repositories' `AGENTS.md`:** The user insists that optimization and error handling be considered **before** each E(i) implementation, not bolted on after avoidable issues. Keep Regieleki speed, but do the substantial thinking/CI internally. A genuine unforeseen post-test fix is acceptable; repeating two or three gameplay waves per milestone to fix foreseeable cost or recovery design is not. Working code alone is **not** a completion criterion.
+
+**Mandatory design gate before any E(i), major feature, or save-layout change:**
+1. **Behavior/invariants:** expected outcomes, boundaries, state authority, isolation, durability and data preservation.
+2. **Real-world performance analysis:** count repeated operations and worst-case CPU cycles, RAM/EWRAM, storage/I/O traffic, per-byte checksum loops, full-capacity behavior and player-visible latency; establish a measurable budget and challenge every bulk operation.
+3. **Adversarial failure analysis:** interrupted/torn writes, CRC/header corruption, lost power, invalid/missing records, stale inventory/PC caches, wrong world/slot, full boxes, version or offset mismatch, migration failure, recovery and rollback.
+4. **Compatibility and alternatives:** protect accepted E5 and populated E6 saves, compare simple/faster/safer architectures, explicitly design migration and verify the last good copy remains readable before switching formats.
+5. **Execution and signoff:** design gate → CI plus negative/boundary/capacity/performance tests → **one concise gameplay acceptance** covering correctness and latency. Don't offload predictable bugs or redundant accepted tests onto the user; label design, code, CI, and gameplay outcomes separately.
+
+**NEW USER-CONFIRMED E6 RESULTS:** Poké Balls correctly return when revisiting World 3 after a world switch (inventory fix **accepted in live gameplay**). The deposited **Zigzagoon in World 3, PC PAGE 8 BOX 1, survives page changes** (new eight-page PC system **accepted for in-session page retention**). These are new facts superseding previous "gameplay unverified" notes below. Do not claim E6 PC **cold restart durability** has been proven by these tests; it hasn't been reported. Existing earlier world-party isolation also passed.
+
+**PERFORMANCE REGRESSION, USER MEASURED:** PC page changes take approximately **6–7 seconds even at emulator 5× fast-forward**. World travel now takes **3–4 seconds at 5×**. Source in `src/xgba_e6_boxes.c` calls `CommitBank` twice per page change; each commit copies/checksums all 8 × 33,744-byte `PokemonStorage` pages and `FindLatest` computes slow bit-by-bit CRC32 of up to two whole banks. World checkpoints also rewrite whole banks. **This was a foreseeable architectural oversight**. The accepted correctness must be kept while optimizing latency.
+
+**Next step = adversarially reviewed optimization PLAN, not implementation yet:** Independently CRC-protected per-page A/B records within the existing E6 save extension are promising; each change should touch only its outgoing page. Compute exact storage budget and offsets, update protocol/active page handling, checkpoint count, validation and CRC overhead, failure semantics. Critically, **design safe conversion of ALREADY POPULATED version-1 box-bank data including World 3's Page 8 Zigzagoon**: backup full .sav, validate both old copies, stage/readback without overwriting the last viable old bank, version-detect, recover torn writes, and refuse unsafe migration. Consider full 112-box/page population and 20-world boundaries. Make the target latency measurable and run automatic tests before asking for one focused gameplay verification. The user approved *planning* and requested these rules written in repo; **no optimization code was authorized by the request to update documents**.
+
+
 ## 2026-10-31: E6 inventory fix + 112-box PC page streaming IMPLEMENTED, GAMEPLAY UNVERIFIED
 
 **CI UPDATE:** The entire C implementation including `src/xgba_e6_boxes.c`, `src/xgba_e6.c`, and PC menu `src/pokemon_storage_system.c` built successfully in https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41188529114 (both jobs success). Additional Python bank-inspection support `tools/xgba_e6_save.py` commit `f2b1b7a8`, and sidecar dual-copy tests `tests/test_xgba_e6_save.py` commit `f20fbb0b` passed the newer `save-format` CI job https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41188725987; full ROM job for that Python-only commit was still running at last check. Source code is committed and compile proven; no gameplay verification yet.
