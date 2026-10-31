@@ -1,5 +1,13 @@
 # XGBA Emerald experiment: living Astra handoff
 
+## 2026-10-31: EXTRA E6 NPC RESTORATION + CI update
+
+- E6 world-switch engine (`src/xgba_e6.c`, `src/save.c`, `data/maps/XgbaTestTown/scripts.inc`) **COMPILED** with `make e6` and Python format tests passed: https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41183020017 . Still **NO USER GAMEPLAY PASS**.
+- Commit `f09e785ccf630f83b4778b29f798ce1a17875331`: `tools/xgba_generate_e2.py` now retains normal object events/trainers and BG interactables in cloned maps, while suppressing hazardous coordinate/script callbacks; cloned Littleroot keeps the five E4/E6/return lab NPCs. Caveat: `shared_events_map` indirection unresolved and NPCs may have original-world script warp destinations. New ROM CI: https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41183201138 (last checked IN PROGRESS). Do not call full stories playable.
+- The ambitious **112-box ×20 worlds / 2240-box** page-streaming follow-up architecture was drafted in `docs/XGBA_E6_PLAN.md` at commit `3c3508eb`. This is design only; native PC currently remains 14 boxes and no page-bank code exists.
+- Next: inspect NPC CI, address failures; then perform one E6 integrated gameplay smoke test with a **new 16 MiB E6 save copy**, preserving E5. If test shows breakage, patch on E6 feature branches and update handoffs. User wants 3 commands and speed, not 100 tests.
+
+
 ## 2026-10-31: E6 EXECUTION checkpoint; feature branches and real code
 
 **The earlier E6 "not yet implemented" statements in this file are historical. E6 IS NOW IN PROGRESS.** Read `docs/XGBA_E6_PLAN.md` first. User wants **Regieleki speed**, no exhaustive QA, but explicit copies of accepted E5 save and frequent handoff commits.
