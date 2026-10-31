@@ -157,12 +157,12 @@ def main():
             })
 
             for x, graphic, script in [
-                (20, "OBJ_EVENT_GFX_SCIENTIST_1", "XgbaE5_EventScript_Snapshot"),
-                (22, "OBJ_EVENT_GFX_BOY_1", "XgbaE5_EventScript_Audit"),
+                (14, "OBJ_EVENT_GFX_SCIENTIST_1", "XgbaE5_EventScript_Snapshot"),
+                (16, "OBJ_EVENT_GFX_BOY_1", "XgbaE5_EventScript_Audit"),
             ]:
                 clone["object_events"].append({
                     "graphics_id": graphic,
-                    "x": x, "y": 12, "elevation": 3,
+                    "x": x, "y": 15, "elevation": 3,
                     "movement_type": "MOVEMENT_TYPE_FACE_DOWN",
                     "movement_range_x": 0, "movement_range_y": 0,
                     "trainer_type": "TRAINER_TYPE_NONE",
