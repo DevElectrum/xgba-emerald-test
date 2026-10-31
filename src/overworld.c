@@ -1044,6 +1044,18 @@ u8 GetFlashLevel(void)
 
 void SetCurrentMapLayout(u16 mapLayoutId)
 {
+    // Original Emerald story scripts use native layout IDs (1..441).
+    // All cloned maps use their matching +442 layouts, which are also the
+    // bases for the 18 later worlds' externally stored geometry.
+    // Keep World 1 and already-clone IDs intact.
+    if (gSaveBlock1Ptr->location.mapGroup >= 34
+        && gSaveBlock1Ptr->location.mapGroup < 68
+        && VarGet(VAR_XGBA_WORLD_ID) >= 2
+        && VarGet(VAR_XGBA_WORLD_ID) <= 20
+        && mapLayoutId >= 1
+        && mapLayoutId < XGBA_E3_FIRST_LAYOUT_ID - 1)
+        mapLayoutId += XGBA_E3_FIRST_LAYOUT_ID - 1;
+
     gSaveBlock1Ptr->mapLayoutId = mapLayoutId;
     gMapHeader.mapLayout = GetMapLayout();
 }
