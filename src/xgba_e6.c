@@ -13,6 +13,8 @@
 typedef char XgbaE6SnapshotFits[(sizeof(struct SaveBlock1) + sizeof(struct SaveBlock2)
     + sizeof(struct PokemonStorage) <= XGBA_E6_PAYLOAD_CAPACITY) ? 1 : -1];
 
+static u8 XgbaE6CurrentWorld(void);
+
 static const u8 sXgbaE6Superblock[24] = {
     'X', 'G', 'B', 'A', 'E', '6', 'S', 0,
     2, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1,
