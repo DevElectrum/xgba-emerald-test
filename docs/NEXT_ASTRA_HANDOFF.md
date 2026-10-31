@@ -1,5 +1,12 @@
 # XGBA Emerald experiment: living Astra handoff
 
+## 2026-10-31: FRESH WORLD 2 TRUCK INTRO ACCEPTED IN GAMEPLAY
+
+**User report from disposable `e6-smoke-fresh/` save:** **"Yup. World 2 truck scene."** Test B1 is now user-confirmed: a newly initialized E6 game can capture its pristine campaign template and enter World 2 at the cloned moving-truck introduction. This is positive runtime evidence of independent **initialization entry** only, not yet that the truck-to-house sequence, Birch rescue, independent starter or entire story succeeds.
+
+**Next precise test:** Continue normal World 2 moving-truck/clock/rival intro, reach Route 101 and verify Professor Birch's Zigzagoon rescue coordinate trigger, starter selection and battle. Do not request 20 playthroughs. Do not disturb user original E6 save or passing Test A disposable copy. Portal collision fix and World 3/20 party/inventory/PC state were separately gameplay accepted in the previous user report.
+
+
 ## 2026-10-31: USER ACCEPTED E6 WORLD 3 / WORLD 20 INTEGRATION REGRESSION
 
 **Actual gameplay report after the clone portal collision fix / E6 branch rebuild:** user said, **"Yup. Party inventory and box zigzagoon all perfect in world 3 and 20."** The preceding test was blocked by the duplicate original World 1 portal on cloned Littleroot; the fixed clone scientist returns to Test Town. Interpret this as **user-confirmed functioning portal and intact party/inventory/PC storage in Worlds 3 and 20 on the new full-story E6 build.** Do not extrapolate to a World 1 isolation acceptance, cold-restart of this new build, or full Hoenn story completion without an explicit test report. Prior optimized v2 cold-restart Zigzagoon acceptance remains a separately confirmed test from the previous game build.
