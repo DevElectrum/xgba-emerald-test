@@ -17,7 +17,11 @@ For **every new E(i), significant feature and save-format change**, complete a l
 **Concrete E6 lesson:** Eight-page PC storage works, but the original implementation rewrote ~270 KiB banks repeatedly with a bitwise CRC32 and now takes **6–7 seconds at 5×** for PC page changes, while world changes take **3–4 seconds at 5×**. This is an avoidable design oversight. Next optimization should use independent page writes, faster CRC and safe preservation/migration of the already-populated E6 saves, with full-capacity and failure-mode analysis **before any optimization code**. The user approved planning, not a change in this request.
 
 
-## Current priority: E6 rapid-iteration project (2026-10-31)
+## Current priority: E7 256 MiB ROM experiment (2026-10-31)
+
+E6 is frozen at xgba/e6-audited-baseline-20261031. User asked for E7 implemented with big steps and MUCH less time. Work only on xgba/e7-256mib; no retesting old Birch, 20-world PC or unrelated E6 systems. E7 adds actually-rendered map assets at 64/128/192/224/255 MiB while leaving E6 16 MiB save, original Flash and RTC untouched. Automated high-address tests and ONE compact gameplay acceptance (Test Town witness + World 20 rendering), then return to Grand Anthology. See latest docs/NEXT_ASTRA_HANDOFF.md. No new save migration.
+
+## Historical priority: E6 rapid-iteration project (2026-10-31)
 
 - **READ FIRST:** [E6 ambitious plan](docs/XGBA_E6_PLAN.md), then the [living handoff](docs/NEXT_ASTRA_HANDOFF.md). E6 implementation is IN PROGRESS on `xgba/e6-world-virtualization`; do not mistake ambitious goals for completed features. Read the companion emulator's `AGENTS.md` and handoff before emulator changes.
 - The user explicitly prefers large, fast experimental leaps over exhaustive corporate-style QA. Work toward **20 independently playable Hoenn worlds + ~100 PC boxes/world stretch target**, including an approximately **16 MiB versioned save** if feasible. Accept breakage and iterate. Do not demand comprehensive tests before every step.
