@@ -149,40 +149,64 @@ static s32 XgbaE6InspectSlot(u8 world, u8 slot, u32 *sequence, u32 *length)
 
     if (XgbaE6Crc(record, 24) != XgbaE6Read32(record + 24))
         return -1;
-    if (XgbaE6Crc(record + 32, *length) != XgbaE6Read32(record + 20))
-        return -1;
     return 1;
+}
+
+static bool8 XgbaE6SlotPayloadValid(u8 world, u8 slot, u32 length)
+{
+    const volatile u8 *p = XgbaE6Slot(world, slot);
+    return XgbaE6Crc(p + 32, length) == XgbaE6Read32(p + 20);
 }
 
 static s32 XgbaE6SelectWorld(u8 world, u8 *slot, u32 *sequence, u32 *length)
 {
-    u32 firstSeq = 0;
-    u32 secondSeq = 0;
-    u32 firstLen = 0;
-    u32 secondLen = 0;
+    u32 firstSeq = 0, secondSeq = 0, firstLen = 0, secondLen = 0;
     s32 first = XgbaE6InspectSlot(world, 0, &firstSeq, &firstLen);
     s32 second = XgbaE6InspectSlot(world, 1, &secondSeq, &secondLen);
+    u8 preferred = second == 1 && (first != 1 || secondSeq > firstSeq) ? 1 : 0;
 
-    if (first == 1 && (second != 1 || firstSeq >= secondSeq))
+    // Check the newest payload first. The older A/B copy is a fallback,
+    // not another full 53 KiB checksum on every ordinary access.
+    if (preferred == 0 && first == 1
+        && XgbaE6SlotPayloadValid(world, 0, firstLen))
     {
         *slot = 0;
         *sequence = firstSeq;
         *length = firstLen;
         return 1;
     }
-    if (second == 1)
+    if (preferred == 1 && second == 1
+        && XgbaE6SlotPayloadValid(world, 1, secondLen))
     {
         *slot = 1;
         *sequence = secondSeq;
         *length = secondLen;
         return 1;
     }
-    if (first < 0 || second < 0)
-        return -1;
-    *slot = 1;
-    *sequence = 0;
-    *length = 0;
-    return 0;
+    if (preferred == 0 && second == 1
+        && XgbaE6SlotPayloadValid(world, 1, secondLen))
+    {
+        *slot = 1;
+        *sequence = secondSeq;
+        *length = secondLen;
+        return 1;
+    }
+    if (preferred == 1 && first == 1
+        && XgbaE6SlotPayloadValid(world, 0, firstLen))
+    {
+        *slot = 0;
+        *sequence = firstSeq;
+        *length = firstLen;
+        return 1;
+    }
+    if (first == 0 && second == 0)
+    {
+        *slot = 1;
+        *sequence = 0;
+        *length = 0;
+        return 0;
+    }
+    return -1;
 }
 
 bool8 XgbaE6SnapshotWorld(u8 world)
