@@ -1,4 +1,5 @@
 #include "global.h"
+#include "load_save.h"
 #include "event_data.h"
 #include "pokemon_storage_system.h"
 #include "xgba_e6.h"
@@ -241,6 +242,126 @@ bool8 XgbaE6SnapshotWorld(u8 world)
         record[i] = header[i];
 
     return TRUE;
+}
+
+// Called only when a map transition can rebuild navigation and map objects.
+// The original 0x234 bytes (warps, camera and map view) remain from the lab;
+// loading those from a different map here would poison the pending warp.
+bool8 XgbaE6RestoreWorld(u8 world)
+{
+    u8 slot;
+    u32 sequence;
+    u32 length;
+    u32 i;
+    u16 chosenWorld;
+    s32 status;
+    const volatile u8 *source;
+    u8 *save1 = (u8 *)gSaveBlock1Ptr;
+    u8 *save2 = (u8 *)gSaveBlock2Ptr;
+    u8 *storage = (u8 *)gPokemonStoragePtr;
+
+    if (world < 1 || world > 20 || !XgbaE6Available())
+        return FALSE;
+
+    status = XgbaE6SelectWorld(world, &slot, &sequence, &length);
+    if (status != 1 || length != XgbaE6SnapshotSize())
+        return FALSE;
+
+    source = XgbaE6Slot(world, slot) + 32;
+    chosenWorld = gSaveBlock1Ptr->vars[VAR_XGBA_WORLD_ID - VARS_START];
+
+    for (i = 0x234; i < sizeof(struct SaveBlock1); i++)
+        save1[i] = source[i];
+    for (i = 0; i < sizeof(struct SaveBlock2); i++)
+        save2[i] = source[sizeof(struct SaveBlock1) + i];
+    for (i = 0; i < sizeof(struct PokemonStorage); i++)
+        storage[i] = source[sizeof(struct SaveBlock1) + sizeof(struct SaveBlock2) + i];
+
+    gSaveBlock1Ptr->vars[VAR_XGBA_WORLD_ID - VARS_START] = chosenWorld;
+    LoadPlayerParty();
+    LoadPlayerBag();
+    return TRUE;
+}
+
+static bool8 XgbaE6PrepareCurrentState(void)
+{
+    if (!XgbaE6Available())
+        return FALSE;
+    SavePlayerParty();
+    SaveObjectEvents();
+    SavePlayerBag();
+    return TRUE;
+}
+
+void XgbaE6SpecialEnterWorld(void)
+{
+    u8 world;
+    s32 status;
+    s32 baseline;
+
+    gSpecialVar_Result = 4;
+    if (!XgbaE6Available())
+    {
+        gSpecialVar_Result = 0;
+        return;
+    }
+    world = XgbaE6CurrentWorld();
+    if (world < 2 || world > 20)
+        return;
+
+    status = XgbaE6AuditWorld(world);
+    if (status == 0)
+    {
+        baseline = XgbaE6AuditWorld(1);
+        if (baseline == 0)
+        {
+            if (!XgbaE6PrepareCurrentState() || !XgbaE6SnapshotWorld(1))
+                return;
+        }
+        else if (baseline < 0)
+        {
+            return;
+        }
+        if (!XgbaE6RestoreWorld(1))
+            return;
+        if (!XgbaE6PrepareCurrentState() || !XgbaE6SnapshotWorld(world))
+            return;
+    }
+    else if (status < 0 || !XgbaE6RestoreWorld(world))
+    {
+        return;
+    }
+    gSpecialVar_Result = 1;
+}
+
+void XgbaE6SpecialLeaveWorld(void)
+{
+    u8 world = XgbaE6CurrentWorld();
+
+    gSpecialVar_Result = 4;
+    if (!XgbaE6PrepareCurrentState())
+    {
+        gSpecialVar_Result = 0;
+        return;
+    }
+    if (world >= 2 && world <= 20 && XgbaE6SnapshotWorld(world))
+        gSpecialVar_Result = 1;
+}
+
+// Native saves made inside cloned Hoenn should also refresh the E6 bank.
+// No write occurs from Test Town, and older E5 ROMs never activate E6.
+void XgbaE6CheckpointOnSave(void)
+{
+    u8 world = XgbaE6CurrentWorld();
+
+    if (world < 2 || world > 20 || !XgbaE6Available())
+        return;
+    if (gSaveBlock1Ptr->location.mapGroup == MAP_GROUP(MAP_XGBA_TEST_TOWN)
+        && gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_XGBA_TEST_TOWN))
+        return;
+
+    SavePlayerBag();
+    XgbaE6SnapshotWorld(world);
 }
 
 s32 XgbaE6AuditWorld(u8 world)
