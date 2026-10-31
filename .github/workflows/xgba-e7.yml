@@ -1,0 +1,62 @@
+name: XGBA E7 256 MiB real-asset and save compatibility
+
+on:
+  push:
+    branches:
+      - xgba/e7-256mib
+    paths-ignore:
+      - '**/*.md'
+      - AGENTS.md
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  address-plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate E7 high-world address map and final-byte probe
+        run: |
+          python3 tools/xgba_pack_e7.py check-header
+          python3 -m unittest discover -s tests -p 'test_xgba_e7_*.py' -v
+          python3 -m unittest discover -s tests -p 'test_xgba_e6_*.py' -v
+          python3 -m py_compile tools/xgba_pack_e7.py
+  emerald-rom:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check out agbcc toolchain
+        uses: actions/checkout@v4
+        with:
+          repository: pret/agbcc
+          path: agbcc
+      - name: Install Emerald dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi libpng-dev
+      - name: Install agbcc
+        working-directory: agbcc
+        run: |
+          ./build.sh
+          ./install.sh ../
+      - name: Build and verify 256 MiB E7 ROM
+        run: make e7
+      - name: Verify exact 256 MiB file, E6 save revision and last byte
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          rom = Path("xgba-emerald-e7.gba")
+          assert rom.stat().st_size == 0x10000000
+          with rom.open("rb") as f:
+              f.seek(0xB5)
+              assert f.read(8) == b"XGBA256\\xE6"
+              f.seek(-16, 2)
+              assert f.read(8) == b"XGBAE7!!"
+              f.seek(-1, 2)
+              assert f.read(1) != b"\\x00"
+          print("E7 256 MiB tagged and final-byte asset validated")
+          PY
