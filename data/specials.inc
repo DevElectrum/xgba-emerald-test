@@ -543,3 +543,5 @@ gSpecials::
 
 	def_special XgbaE5SpecialSnapshot
 	def_special XgbaE5SpecialAudit
+	def_special XgbaE6SpecialSnapshot
+	def_special XgbaE6SpecialAudit
