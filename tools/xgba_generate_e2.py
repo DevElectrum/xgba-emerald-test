@@ -117,6 +117,23 @@ def main():
             clone["object_events"] = []
             clone["bg_events"] = []
 
+        # Intro/rescue interactions are driven by map callbacks and coordinate
+        # triggers, not just visible NPCs. Without them Birch is mute and
+        # the rival house can show actors in the wrong story state.
+        if name in ("Route101", "LittlerootTown_MaysHouse_1F",
+                    "LittlerootTown_BrendansHouse_1F"):
+            clone["shared_scripts_map"] = original.get("shared_scripts_map", name)
+            clone["coord_events"] = copy.deepcopy(original.get("coord_events", []))
+
+        # The rival sibling at May's east wall can wander across the boundary
+        # before indoor map transitions have settled. Keep the sibling still.
+        if name == "LittlerootTown_MaysHouse_1F":
+            for obj in clone["object_events"]:
+                if obj["script"] == "RivalsHouse_1F_EventScript_RivalSibling":
+                    obj["movement_type"] = "MOVEMENT_TYPE_FACE_DOWN"
+                    obj["movement_range_x"] = 0
+                    obj["movement_range_y"] = 0
+
         for warp in clone.get("warp_events", []):
             dest = warp["dest_map"]
             if dest in translated_ids:
