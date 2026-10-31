@@ -31,6 +31,32 @@ E5 separates old, accepted game data from expanded world history:
 
 Each world has two independently verifiable 20 KiB records, with sequence number, world ID, payload length, record-header CRC32 and payload CRC32. The payload can hold up to **20,448 bytes**. The newest valid copy is selected, with automatic fallback to the older copy if the newest is damaged; both corrupt copies produce an explicit error rather than silently erasing history. This is **format-level** validation so far, not yet an in-game transactional protocol.
 
+## E5 live guest API work (2026-10-31)
+
+The E5 test branch now contains `src/xgba_e5.c` and `include/xgba_e5.h`.
+The guest probes both 24-byte v1 superblocks, checks the cartridge's XGBA256/E5 opt-in header, and **never writes 0x0F memory until a complete superblock matches**.
+The API reads and writes bytewise through the emulator's experimental 896 KiB save window; it does not assume 16-bit/32-bit writes are supported.
+Each world keeps two 20 KiB slots with the host-tool-compatible record layout, sequence number, header CRC32, payload CRC32 and newest-valid-copy selection.
+Writes invalidate only the inactive slot, fill its payload, then write the record header, magic last. This supports fallback to a previously complete copy but **does not constitute a guarantee against sudden power loss or OS write reordering**.
+
+The clone generator adds two E5-only test NPCs to each World 2–20 Littleroot at (20,12) and (22,12).
+The first writes a 16-byte snapshot of the current E4 world's four prototype variables and 48 flags; the second reads the newest E5 record and checks it against live E4 RAM without modifying storage.
+The original three E4 NPCs and world-selection behavior remain.
+The original E4 state always continues to reside in standard SaveBlock1 and normal Emerald flash. E5 snapshotting is explicit and does not replace native saving.
+This is **not** a full per-world save migration or independent storyline implementation.
+
+### Live acceptance protocol (after the E5 ROM build CI passes)
+
+1. Preserve the user's working E4 ROM and `.sav` **as independent backups**. Do not run E5 against that save basename.
+2. On the E5 branch, build `make e5`. If the intended E5 ROM filename already exists, move the old experimental artifact aside first; the packer refuses accidental replacement.
+3. Use `python3 tools/xgba_e5_save.py init E4_BACKUP.sav xgba-emerald-e5.sav` to create a fresh 1 MiB E5 save file. It refuses overwrites and leaves its input unchanged.
+4. Launch `xgba-emerald-e5.gba` with the **E5 branch** of the emulator, preferably the Qt GUI built from the E5 branch. Confirm original E4 progress remains before testing extension writes.
+5. In World 20, talk to the new writer (20,12), then auditor (22,12), expecting success and match. Do the same in World 3. Revisit both without modifying E4 counters; auditors must agree.
+6. Save normally, fully exit the emulator, reopen, and audit World 20 and World 3 again.
+7. Inspect the resulting `.sav` with `python3 tools/xgba_e5_save.py inspect xgba-emerald-e5.sav`; both world records should be valid. Any offline corruption test must run on **another copy**, not on the primary E5 experiment.
+
+No manual user test is requested until both latest branch builds succeed. Emulator unit tests are not a substitute for a full gameplay save/exit/restart.
+
 ## Two isolated branches
 
 - **Test ROM and host format:** `DevElectrum/xgba-emerald-test`, branch `xgba/e5-expanded-save` based on accepted E4. `tools/xgba_e5_save.py` creates/verifies/mutates E5 save copies *offline*, and `tests/test_xgba_e5_save.py` covers corruption recovery, 20-way isolation, 128 KiB preservation, overwrite refusal and RTC trailer migration.
