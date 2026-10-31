@@ -1,5 +1,13 @@
 # XGBA Emerald experiment: living Astra handoff
 
+## 2026-10-31: Cloned Hoenn wild encounters restored in E6 source
+
+- User asked whether World 3 has Pokémon spawns. **NO in previous E6 builds**: `src/data/wild_encounters.json` contained 135 encounter entries for base Hoenn, zero `MAP_XGBA2_*` clone entries. `GetCurrentMapWildMonHeaderId` in `src/wild_encounter.c` previously required an exact group+map match, so all clone maps in groups 34–67 returned `HEADER_NONE` and had no standard wild encounters.
+- **Patch committed** on E6 game branch: `d445524875cc9738eabf16ba230619dd02fe065d`. In `src/wild_encounter.c`, normalize groups 34–67 to original groups 0–33 during wild-encounter header lookup; preserve map number and Altering Cave logic. All 20 worlds then reuse original encounter species and rates without duplicating 135 tables. Intended for grass, surfing, fishing, rock smash via shared lookup. Not an emulator change.
+- **Status:** source change committed; user has not yet tried it and it has not been accepted in gameplay. Check the E6 game branch's latest Actions run; compile, then ask for a single Route 101 tall-grass encounter in World 3 and World 20. Do not require another save copy or migration. The original and E6 saves remain untouched.
+- Separate recent fixes include `077c6aae` (Route101 scripted rescue / rival-house triggers), `102a0e87` (redirect story-script warps into clone). They may still need runtime inspection. Keep handoffs updated on meaningful milestones.
+
+
 ## 2026-10-31: USER FOUND E6 HOENN 20 STORY NPC BUG; PATCH COMMITTED
 
 **CI PASS confirmed:** https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41184903637 for commit `102a0e87`. Both complete Emerald E6 ROM build and E6 Python save-format checks passed with the Route101/rival-house callback restoration and scripted-warp redirection. Runtime behavior remains unverified until user tests the patched ROM. Existing `xgba-emerald-e6.sav` should be preserved and reused, no migration needed.
