@@ -328,8 +328,10 @@ void XgbaE6SpecialEnterWorld(void)
     }
     sourceWorld = XgbaE6CurrentWorld();
     world = VarGet(VAR_XGBA_TARGET_WORLD);
-    if (world < 2 || world > 20)
+    if (world == 0)
         world = sourceWorld >= 2 ? sourceWorld : 2;
+    if (world < 2 || world > 20)
+        return;
 
     // The selected destination is not the active world until the restore
     // succeeds. Reject legacy/corrupt records before replacing live data.
