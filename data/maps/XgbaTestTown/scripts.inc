@@ -65,19 +65,20 @@ Xgba2Littleroot_Text_Return:
 XgbaTestTown_EventScript_NextWorld::
 	lock
 	faceplayer
-	compare VAR_XGBA_WORLD_ID, 2
-	goto_if_lt XgbaTestTown_EventScript_ResetWorld
-	compare VAR_XGBA_WORLD_ID, 20
-	goto_if_ge XgbaTestTown_EventScript_ResetWorld
-	addvar VAR_XGBA_WORLD_ID, 1
-	goto XgbaTestTown_EventScript_ShowSelectedWorld
-
-XgbaTestTown_EventScript_ResetWorld:
-	setvar VAR_XGBA_WORLD_ID, 2
-
-XgbaTestTown_EventScript_ShowSelectedWorld:
+	setvar VAR_0x8004, SCROLL_MULTI_XGBA_WORLD_SELECT
+	special ShowScrollableMultichoice
+	compare VAR_RESULT, MULTI_B_PRESSED
+	goto_if_eq XgbaTestTown_EventScript_CancelWorld
+	compare VAR_RESULT, 19
+	goto_if_eq XgbaTestTown_EventScript_CancelWorld
+	copyvar VAR_XGBA_WORLD_ID, VAR_RESULT
+	addvar VAR_XGBA_WORLD_ID, 2
 	buffernumberstring STR_VAR_1, VAR_XGBA_WORLD_ID
 	msgbox XgbaTestTown_Text_NextWorld, MSGBOX_DEFAULT
+	release
+	end
+
+XgbaTestTown_EventScript_CancelWorld:
 	release
 	end
 
