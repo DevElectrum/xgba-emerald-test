@@ -39,7 +39,32 @@ class CloneEventTests(unittest.TestCase):
 
                 original_objects = original.get("object_events", [])
                 clone_objects = clone.get("object_events", [])
-                self.assertGreaterEqual(len(clone_objects), len(original_objects), name)
+                expected_objects = original_objects
+                if name == "LittlerootTown":
+                    # Clone return portal must replace the original World 1
+                    # portal at (14, 12), not overlap it.
+                    expected_objects = [
+                        obj for obj in original_objects
+                        if obj.get("script") != "LittlerootTown_EventScript_XgbaPortal"
+                    ]
+                    at_portal = [
+                        obj for obj in clone_objects
+                        if obj.get("x") == 14 and obj.get("y") == 12
+                    ]
+                    self.assertEqual(len(at_portal), 1)
+                    self.assertEqual(
+                        at_portal[0]["script"],
+                        "Xgba2Littleroot_EventScript_Return"
+                    )
+                    self.assertEqual(
+                        sum(obj.get("script") == "Xgba2Littleroot_EventScript_Return"
+                            for obj in clone_objects), 1
+                    )
+                    self.assertFalse(any(
+                        obj.get("script") == "LittlerootTown_EventScript_XgbaPortal"
+                        for obj in clone_objects
+                    ))
+                self.assertGreaterEqual(len(clone_objects), len(expected_objects), name)
                 if name == "LittlerootTown_MaysHouse_1F":
                     for index in range(len(original_objects)):
                         old_obj = original_objects[index]
@@ -49,7 +74,7 @@ class CloneEventTests(unittest.TestCase):
                         else:
                             self.assertEqual(new_obj, old_obj, name)
                 else:
-                    self.assertEqual(clone_objects[:len(original_objects)], original_objects, name)
+                    self.assertEqual(clone_objects[:len(expected_objects)], expected_objects, name)
 
         self.assertEqual(original_count, 518)
 

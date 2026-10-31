@@ -437,5 +437,9 @@ e6:
 	python3 tools/xgba_generate_e2.py
 	python3 tools/xgba_generate_e3.py
 	$(MAKE) -j2 all
-	python3 tools/xgba_pack_e3.py pack --e6-save --output xgba-emerald-e6.gba
-	python3 tools/xgba_pack_e3.py verify --e6-save --output xgba-emerald-e6.gba
+	@set -eu; \
+	  stage=$(mktemp -d ./.xgba-e6-pack.XXXXXXXX); \
+	  trap 'rm -rf "$stage"' EXIT; \
+	  python3 tools/xgba_pack_e3.py pack --e6-save --output "$stage/xgba-emerald-e6.gba"; \
+	  python3 tools/xgba_pack_e3.py verify --e6-save --output "$stage/xgba-emerald-e6.gba"; \
+	  mv -f "$stage/xgba-emerald-e6.gba" xgba-emerald-e6.gba

@@ -151,9 +151,16 @@ def main():
             total_connections += 1
 
         if name == "LittlerootTown":
-            # Retain vanilla introduction/story actors and add the laboratory
-            # portal + diagnostics without clearing original objects or triggers.
-            clone.setdefault("object_events", []).append({
+            # The original map has a World 1 laboratory scientist at (14,12).
+            # The cloned map uses that SAME tile for its return-to-hub scientist.
+            # Keeping both actors makes the World 1 script win the interaction,
+            # and it rejects every cloned-world visit. Remove only that one
+            # XGBA-specific actor, preserving all vanilla story NPCs/triggers.
+            clone["object_events"] = [
+                obj for obj in clone.get("object_events", [])
+                if obj.get("script") != "LittlerootTown_EventScript_XgbaPortal"
+            ]
+            clone["object_events"].append({
                 "graphics_id": "OBJ_EVENT_GFX_SCIENTIST_1",
                 "x": 14, "y": 12, "elevation": 3,
                 "movement_type": "MOVEMENT_TYPE_FACE_DOWN",
