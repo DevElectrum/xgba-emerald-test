@@ -65,19 +65,20 @@ Xgba2Littleroot_Text_Return:
 XgbaTestTown_EventScript_NextWorld::
 	lock
 	faceplayer
-	compare VAR_XGBA_WORLD_ID, 2
-	goto_if_lt XgbaTestTown_EventScript_ResetWorld
-	compare VAR_XGBA_WORLD_ID, 20
-	goto_if_ge XgbaTestTown_EventScript_ResetWorld
-	addvar VAR_XGBA_WORLD_ID, 1
-	goto XgbaTestTown_EventScript_ShowSelectedWorld
-
-XgbaTestTown_EventScript_ResetWorld:
-	setvar VAR_XGBA_WORLD_ID, 2
-
-XgbaTestTown_EventScript_ShowSelectedWorld:
+	setvar VAR_0x8004, SCROLL_MULTI_XGBA_WORLD_SELECT
+	special ShowScrollableMultichoice
+	compare VAR_RESULT, MULTI_B_PRESSED
+	goto_if_eq XgbaTestTown_EventScript_CancelWorld
+	compare VAR_RESULT, 19
+	goto_if_eq XgbaTestTown_EventScript_CancelWorld
+	copyvar VAR_XGBA_WORLD_ID, VAR_RESULT
+	addvar VAR_XGBA_WORLD_ID, 2
 	buffernumberstring STR_VAR_1, VAR_XGBA_WORLD_ID
 	msgbox XgbaTestTown_Text_NextWorld, MSGBOX_DEFAULT
+	release
+	end
+
+XgbaTestTown_EventScript_CancelWorld:
 	release
 	end
 
@@ -135,3 +136,84 @@ XgbaE4_Text_UnvisitedProgress:
 XgbaE4_Text_VisitedProgress:
 	.string "World {STR_VAR_1}: progress {STR_VAR_2}.\n"
 	.string "Local event flag: SET.$"
+
+XgbaE5_EventScript_Snapshot::
+	lock
+	faceplayer
+	special XgbaE5SpecialSnapshot
+	compare VAR_RESULT, 1
+	goto_if_eq XgbaE5_EventScript_SnapshotSuccess
+	compare VAR_RESULT, 0
+	goto_if_eq XgbaE5_EventScript_Unsupported
+	msgbox XgbaE5_Text_WriteFailed, MSGBOX_DEFAULT
+	release
+	end
+
+XgbaE5_EventScript_SnapshotSuccess:
+	msgbox XgbaE5_Text_SnapshotSuccess, MSGBOX_DEFAULT
+	release
+	end
+
+XgbaE5_EventScript_Audit::
+	lock
+	faceplayer
+	special XgbaE5SpecialAudit
+	compare VAR_RESULT, 1
+	goto_if_eq XgbaE5_EventScript_AuditSuccess
+	compare VAR_RESULT, 0
+	goto_if_eq XgbaE5_EventScript_Unsupported
+	compare VAR_RESULT, 2
+	goto_if_eq XgbaE5_EventScript_AuditEmpty
+	compare VAR_RESULT, 3
+	goto_if_eq XgbaE5_EventScript_AuditMismatch
+	msgbox XgbaE5_Text_AuditCorrupt, MSGBOX_DEFAULT
+	release
+	end
+
+XgbaE5_EventScript_AuditSuccess:
+	msgbox XgbaE5_Text_AuditSuccess, MSGBOX_DEFAULT
+	release
+	end
+
+XgbaE5_EventScript_AuditEmpty:
+	msgbox XgbaE5_Text_AuditEmpty, MSGBOX_DEFAULT
+	release
+	end
+
+XgbaE5_EventScript_AuditMismatch:
+	msgbox XgbaE5_Text_AuditMismatch, MSGBOX_DEFAULT
+	release
+	end
+
+XgbaE5_EventScript_Unsupported:
+	msgbox XgbaE5_Text_Unsupported, MSGBOX_DEFAULT
+	release
+	end
+
+XgbaE5_Text_SnapshotSuccess:
+	.string "E5: Wrote this world's event bank!\n"
+	.string "Use the next auditor after saving.$"
+
+XgbaE5_Text_AuditSuccess:
+	.string "E5: Persistent event bank matches!\n"
+	.string "Our new save window works.$"
+
+XgbaE5_Text_AuditEmpty:
+	.string "E5: No snapshot for this world.\n"
+	.string "Talk to the writer first.$"
+
+XgbaE5_Text_AuditMismatch:
+	.string "E5: Snapshot differs from RAM.\n"
+	.string "Did you change progress since then?$"
+
+XgbaE5_Text_AuditCorrupt:
+	.string "E5: Cannot verify saved record.\n"
+	.string "No data was overwritten.$"
+
+XgbaE5_Text_WriteFailed:
+	.string "E5: Record write refused.\n"
+	.string "Check the save-format integrity.$"
+
+XgbaE5_Text_Unsupported:
+	.string "E5 expanded save is unavailable!\n"
+	.string "No extra-memory write occurred.$"

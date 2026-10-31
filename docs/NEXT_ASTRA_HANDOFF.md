@@ -1,7 +1,48 @@
 # XGBA Emerald experiment: living Astra handoff
 
+## CURRENT NEXT ASTRA CHECKPOINT: 2026-10-31 (E6 planned, no E6 code started)
+
+**Immediate instruction:** Read [`docs/XGBA_E6_PLAN.md`](XGBA_E6_PLAN.md) and [`AGENTS.md`](../AGENTS.md), plus companion emulator handoff and AGENTS. User explicitly rejected conservative flags-only E6 in favor of an ambitious, fast-moving E6. **Regieleki: speed is god.** This is a passion project: take large steps, run minimal CI and selected gameplay smoke tests, use backups, and accept temporary breakage rather than designing a huge QA bureaucracy.
+
+**Current verified work:** accepted E3 geography (20 selectable Hoenn layouts), accepted E4 per-world 16-byte event state, and **user-tested E5 1 MiB extended-save snapshot persistence for World 3 and 20 across normal save, full XGBA shutdown and reload**. They should NOT have to repeat those tests. E5 selection-menu QoL change implemented in game branch: Test Town (18,12) opens a scrolling list Worlds 2..20; neighboring (16,12) warps. No explicit user confirmation of that newer menu's runtime behavior yet.
+
+**E6 planned scope (NOT IMPLEMENTED):** increase emulator file-backed E5 save to a **versioned ~16 MiB E6** format, independent world-local `SaveBlock1`, `SaveBlock2`, PC storage, parties, inventory, story flags, trainer state and safe world transitions; restore actual events/NPCs/story in cloned Hoenn; attempt **100 PC boxes per world** as aggressive stretch. Avoid claiming mere disk growth automatically fixes box UI or 95%-full EWRAM. Need deliberate shared/global metadata, migration from E5, streamed records and safe warp boundary. E6 is a combined large milestone, not flags-only E6 followed by later storage milestones.
+
+**Next steps:** (1) inspect current HEAD, code and CI; (2) when starting implementation, branch the **game** `xgba/e6-world-virtualization` from `xgba/e5-expanded-save` and the **emulator** `xgba/e6-large-save` from `xgba/e5-save-expansion` (names proposed, branches do not yet exist); (3) implement expanded file-backed save + migration first or in parallel with world-state serialization, then restored maps and big boxes, iterating rapidly. Protect E4/E5 savenames and `master`; never touch `DevElectrum/grand-anthology`.
+
+**Repository changes made during this handoff update:** E6 strategy doc added `8099a85a`; game `AGENTS.md` updated `060bee38`; emulator `AGENTS.md` created on E5 branch `1a66d9a0`. These are **documentation-only** changes; no new emulator/game runtime E6 code was written, and no new E6 gameplay tests run in this checkpoint.
+
+**Mandatory continuity rule:** at every meaningful coding milestone/CI result/architecture change/blocker, *commit an updated handoff before ending or exhausting chat context*. Update both repos' `AGENTS.md` and handoffs when instructions/interfaces change. Record exact branch and commit, changed files, tests with links and observed status, outstanding bugs, and concrete next action. The user wants ~three terminal commands only (update/build, optional save copy, launch Qt GUI). GitHub updates are not yet present in the user's local Nyx repos until `git pull`.
+
+
+## 2026-10-31: Test Town world selector replaced with a native scrolling menu
+
+User asked to replace the repetitive (18,12) world-ID cycling NPC (World 2 through World 20) with a Pokémart-style selection list. Implemented on `xgba/e5-expanded-save` in `include/constants/field_specials.h` (new `SCROLL_MULTI_XGBA_WORLD_SELECT = 13`, capacity increased from 16 to 20), `src/field_specials.c` (19 static WORLD 2–20 labels plus Exit; six visible rows, scroll arrows, current destination preselected), and `data/maps/XgbaTestTown/scripts.inc` (cancel/B leaves `VAR_XGBA_WORLD_ID` unchanged; selecting index 0–18 copies index+2 into the existing world ID; existing (16,12) warp scientist unchanged). No emulator or save-format modifications; existing E5 `.sav` should be reused. User has not yet verified this new menu in gameplay. The goal is one scrolling menu rather than up to 19 separate dialogs. Updated instructions and notes in `docs/XGBA_E5_README.md`.
+
+## 2026-10-31: E5 LIVE GAMEPLAY PERSISTENCE ACCEPTED
+
+**USER CONFIRMED BOTH PHASES PASSED.** With the E5 Qt XGBA build and the separately initialized `xgba-emerald-e5.sav`, the user visited World 20 and World 3. In each world, the E5 writer successfully recorded the existing 16-byte E4 prototype event state and the E5 auditor reported a match. Returning between worlds preserved each independent E5 snapshot. After a normal in-game save, complete emulator shutdown, and reload, both world's E5 auditors again reported matches. This is direct user verification of guest 0x0F writes surviving the emulator's save-file cycle.
+
+The final reachable E5 NPC locations in cloned Littleroot are **writer (14,15)** and **auditor (16,15)**. The original (20,12)/(22,12) placements were obstructed by trees and have been fixed in the generator. The user confirmed the replacement NPCs are reachable.
+
+**Accepted scope:** E5 opt-in 1 MiB save bridge and independent 16-byte snapshot read/write/restart proof for Worlds 3/20. **Not accepted:** full world-local trainer/story data, Pokémon PC box expansion, maximal 20,448-byte record stress tests, game-level torn-write recovery, all-world coverage, and end-to-end RTC compatibility. The original E4 save must remain backed up. Do not ask the user to repeat this already successful acceptance test.
+
+User workflow preference: **three commands whenever practical**: (1) update repositories/build, (2) create or copy save only if applicable, (3) run the Qt `mgba-qt` with the new ROM. For ROM-only patches, give two commands: update/rebuild, launch.
+
+Next: choose the next design milestone. The 20 KiB E5 per-world payload cannot accommodate a vanilla 33,744-byte `PokemonStorage` wholesale; do not claim full Pokémon boxes are supported. Plan larger or differently packed world/PC storage separately. Keep `DevElectrum/grand-anthology` and both `master` branches untouched.
+
+- **2026-10-31 E5 integration gate update:** E5 game native build succeeded: https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41172674059 . E5 64 MiB ROM, header/checksum validation and host-format tests succeeded: https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41172674073 . E5 emulator CTest persistence success: https://github.com/DevElectrum/xgba/actions/runs/41172551382 . All are code/format proof, not in-game acceptance. Next action: build emulator + E5 ROM locally, use host `init` to convert a COPY of the E4 save, verify NPCs at World 20/3 (20,12 writer; 22,12 auditor), save/close/reopen, and check `xgba_e5_save.py inspect`. Protect originals.
+
+## 2026-10-31: E5 game-side runtime integration started
+
+- Active `xgba/e5-expanded-save` now contains `include/xgba_e5.h` and `src/xgba_e5.c`: strict cart+superblock probe, bytewise `0x0F` read/write, 20-world dual-slot format compatible with `tools/xgba_e5_save.py`, header/payload CRC32 validation, newest-valid-copy selection, and inactive-slot writes with magic last.
+- E5 snapshot/audit specials are appended to `data/specials.inc`; event scripts live in `data/maps/XgbaTestTown/scripts.inc`; `tools/xgba_generate_e2.py` generates new NPCs at cloned Littleroot (14,15) writer and (16,15) auditor. They snapshot/check the existing 16-byte E4 world-event prototype, **not** complete world progression or PC boxes.
+- The first native agbcc link job found that libc `memcmp` is unavailable in this build. Fixed in `83c63f99ffd750c9825e8b845e3d4d2274065d0c` with explicit byte comparison. The latest ROM build/check must pass before asking the user to test; earlier green host-format-only Python jobs do not verify the new game C code.
+- Emulator E5 unit test is green: https://github.com/DevElectrum/xgba/actions/runs/41172551382, including save-file unload/reload persistence, redundant superblock recovery, and fail-closed behavior.
+- Preserve accepted E4 save/ROM, create E5 **copies** with `tools/xgba_e5_save.py init`, and keep all changes on E5 branches. Details and proposed gameplay acceptance procedure in `docs/XGBA_E5_README.md`. Nothing merged to master or Grand Anthology.
+
 Updated: 2026-10-30
-Status: **E1/E2/E3 accepted; E4 independently persistent event-state prototype ACCEPTED in user-tested XGBA gameplay on 2026-10-30.** Both World 3 (1/SET) and World 20 (3/SET) survived a full in-game save and emulator restart. Full story, trainer, encounter, and PC box isolation is not yet implemented.
+Status: E1/E2/E3 accepted, E4 **fully accepted in real gameplay with independent World 3 and World 20 records surviving save/restart**. E5 experimental storage expansion STARTED on `xgba/e5-expanded-save` (game) and `xgba/e5-save-expansion` (emulator). Offline 1 MiB save format / CRC fallback tests and emulator baseline CI pass; E5 game runtime snapshot I/O and user testing NOT done.
 
 ## Read this first
 
@@ -63,6 +104,20 @@ The first E0 is **relocation** of the existing Littleroot map layout, not yet a 
 - User explicitly requires fast-forward in XGBA. The prior SDL build was unsatisfactory because turbo was ineffective. This is a **mandatory acceptance gate for any future emulator build/recommendation**.
 - Emulator fix in progress on `DevElectrum/xgba` branch `xgba/p1-fast-forward`: removes software and OpenGL renderer VSync and prioritizes the hold-Tab turbo key; verify CI and actual measured speed on Nyx before saying fixed.
 - Primary emulator handoff: https://github.com/DevElectrum/xgba/blob/xgba/p1-fast-forward/docs/NEXT_ASTRA_HANDOFF.md
+
+## E5 start: audited save sectors and separate 1 MiB save backend (2026-10-30)
+
+**User told us to start E5 while they sleep. No user action/commands are needed yet. Do NOT promise background progress beyond what has actually been committed.**
+
+- **Important audit**: `src/save.c`, `include/save.h` show all 32 standard Emerald 4KiB flash sectors occupied: 0-13 main slot A, 14-27 main slot B, 28-29 Hall of Fame, 30 Trainer Hill, 31 Recorded Battle. None are spare. Do NOT repurpose native sectors or enlarge SaveBlock1 beyond the old `0x3D88` footprint.
+- **E5 game branch**: `DevElectrum/xgba-emerald-test` / `xgba/e5-expanded-save`, based on accepted E4. Draft [PR #6](https://github.com/DevElectrum/xgba-emerald-test/pull/6). `tools/xgba_e5_save.py` creates a separate E5 save from unchanged 128KiB native flash and optional 16-byte mGBA RTC trailer. It refuses to overwrite existing files and provides inspect/get/put/extract-native commands for offline experiments. `tests/test_xgba_e5_save.py` covers 20 worlds, 2-copy CRC fallback, both-copy corruption detection, native bytes/RTC preservation and maximum payload.
+- **Storage plan**: physical save size exactly 1MiB (optionally +16 bytes RTC at end): 0x00000..0x1FFFF untouched native save, 0x20000..0x20FFF primary header, 0x21000..0xE8FFF 20 worlds x two 20KiB slots, 0xE9000..0xFEFFF 88KiB reserved, 0xFF000..0xFFFFF backup header. Each record has 32-byte self-validating header and max 20,448-byte payload. Signatures `XGBAE5S\0` / `XGBAE5W\0`; CRC32 and monotonic sequence. Any corrupt active snapshot falls back to the older valid copy; both invalid report an error.
+- **ROM opt-in**: E5 branch adds `make e5`, invoking established E3 64MiB packer with `--e5-save`. ROM has same `XGBA256` extended-ROM header bytes `0xB5..0xBB`, revision byte `0xBC=0xE5` and recomputed GBA checksum `0xBD`. Output `xgba-emerald-e5.gba`, independent of old E4 and E3 ROMs. The E5 game currently retains E4 script/counter behavior; it does NOT yet access expanded history.
+- **E5 emulator branch**: `DevElectrum/xgba` / `xgba/e5-save-expansion`, based on accepted fast-forward branch `xgba/p1-fast-forward`. Draft [PR #4](https://github.com/DevElectrum/xgba/pull/4). For explicit E5-tagged ROMs **with initialized E5 save magic**, prototype maps 1MiB `.sav` (normal first128KiB flash + 896KiB appended) and exposes extension via CPU reads/writes to **0x0F000000..0x0F0DFFFF**. Original flash commands remain in 0x0E; out-of-range extension addresses ignored/return FF. Writes mark savedata dirty for normal mGBA sync. Legacy ROM and old E4 saves are never converted or overwritten implicitly.
+- **RTC gotcha discovered**: mGBA appends 16B clock metadata *after* normal flash bytes. Offline E5 migration handles native `0x20010` saves and generates `0x100010` files preserving RTC trailer at the end. Emulator `GBASavedataRTCRead/Write` offsets follow `GBASavedataSize`. Never naively copy old trailer into extension at 0x20000.
+- **CI passed across both repos**: [E5 offline format Actions #41041353375](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41041353375) including optional RTC migration, [E5 emulator build/test Actions #41041284439](https://github.com/DevElectrum/xgba/actions/runs/41041284439), and [E5 game ROM Actions #41041353411](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41041353411) compiling 64 MiB E5-tagged Emerald, checking GBA revision/checksum and verifying all expanded-ROM payloads. **No running game has yet used the E5 0x0F save extension**, so do not call E5 complete.
+- **Next**: Finish E5 ROM CI; implement a strictly guarded game-side E5 GBA-memory API and a simple read/write world-history test that cannot write to normal 0x0E Flash when emulator E5 extension is absent. Validate emulator direct persistence on a newly copied E5 save and ROM. Then design broader world state serialization, world transition lifecycle and recovery/rollback policy. Do not claim complete independent stories or accept E5 based on CI alone.
+- Full technical guide: `docs/XGBA_E5_README.md`. Preserve `DevElectrum/grand-anthology`, accepted E4 branch, existing E4 savestates and `.sav` files unchanged.
 
 ## E4 formal acceptance: two independent worlds survived save/restart (2026-10-30)
 

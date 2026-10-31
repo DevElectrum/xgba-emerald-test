@@ -2380,12 +2380,42 @@ void ShowScrollableMultichoice(void)
         task->tKeepOpenAfterSelect = FALSE;
         task->tTaskId = taskId;
         break;
+    case SCROLL_MULTI_XGBA_WORLD_SELECT:
+        task->tMaxItemsOnScreen = MAX_SCROLL_MULTI_ON_SCREEN;
+        task->tNumItems = 20;
+        task->tLeft = 18;
+        task->tTop = 1;
+        task->tWidth = 11;
+        task->tHeight = 12;
+        task->tKeepOpenAfterSelect = FALSE;
+        task->tTaskId = taskId;
+        break;
     default:
         gSpecialVar_Result = MULTI_B_PRESSED;
         DestroyTask(taskId);
         break;
     }
 }
+
+static const u8 sText_XgbaWorld2[] = _("WORLD 2");
+static const u8 sText_XgbaWorld3[] = _("WORLD 3");
+static const u8 sText_XgbaWorld4[] = _("WORLD 4");
+static const u8 sText_XgbaWorld5[] = _("WORLD 5");
+static const u8 sText_XgbaWorld6[] = _("WORLD 6");
+static const u8 sText_XgbaWorld7[] = _("WORLD 7");
+static const u8 sText_XgbaWorld8[] = _("WORLD 8");
+static const u8 sText_XgbaWorld9[] = _("WORLD 9");
+static const u8 sText_XgbaWorld10[] = _("WORLD 10");
+static const u8 sText_XgbaWorld11[] = _("WORLD 11");
+static const u8 sText_XgbaWorld12[] = _("WORLD 12");
+static const u8 sText_XgbaWorld13[] = _("WORLD 13");
+static const u8 sText_XgbaWorld14[] = _("WORLD 14");
+static const u8 sText_XgbaWorld15[] = _("WORLD 15");
+static const u8 sText_XgbaWorld16[] = _("WORLD 16");
+static const u8 sText_XgbaWorld17[] = _("WORLD 17");
+static const u8 sText_XgbaWorld18[] = _("WORLD 18");
+static const u8 sText_XgbaWorld19[] = _("WORLD 19");
+static const u8 sText_XgbaWorld20[] = _("WORLD 20");
 
 static const u8 *const sScrollableMultichoiceOptions[][MAX_SCROLL_MULTI_LENGTH] =
 {
@@ -2540,6 +2570,29 @@ static const u8 *const sScrollableMultichoiceOptions[][MAX_SCROLL_MULTI_LENGTH] 
         gText_Underpowered,
         gText_WhenInDanger,
         gText_Exit
+    },
+    [SCROLL_MULTI_XGBA_WORLD_SELECT] =
+    {
+        sText_XgbaWorld2,
+        sText_XgbaWorld3,
+        sText_XgbaWorld4,
+        sText_XgbaWorld5,
+        sText_XgbaWorld6,
+        sText_XgbaWorld7,
+        sText_XgbaWorld8,
+        sText_XgbaWorld9,
+        sText_XgbaWorld10,
+        sText_XgbaWorld11,
+        sText_XgbaWorld12,
+        sText_XgbaWorld13,
+        sText_XgbaWorld14,
+        sText_XgbaWorld15,
+        sText_XgbaWorld16,
+        sText_XgbaWorld17,
+        sText_XgbaWorld18,
+        sText_XgbaWorld19,
+        sText_XgbaWorld20,
+        gText_Exit
     }
 };
 
@@ -2558,6 +2611,21 @@ static void Task_ShowScrollableMultichoice(u8 taskId)
     sScrollableMultichoice_ListMenuItem = AllocZeroed(task->tNumItems * sizeof(struct ListMenuItem));
     sFrontierExchangeCorner_NeverRead = 0;
     InitScrollableMultichoice();
+
+    if (task->tScrollMultiId == SCROLL_MULTI_XGBA_WORLD_SELECT)
+    {
+        u16 world = VarGet(VAR_XGBA_WORLD_ID);
+
+        if (world >= 2 && world <= 20)
+        {
+            u16 choice = world - 2;
+            u16 lastFirstItem = task->tNumItems - task->tMaxItemsOnScreen;
+
+            task->tScrollOffset = choice > lastFirstItem ? lastFirstItem : choice;
+            task->tSelectedRow = choice - task->tScrollOffset;
+            sScrollableMultichoice_ScrollOffset = task->tScrollOffset;
+        }
+    }
 
     for (width = 0, i = 0; i < task->tNumItems; i++)
     {
