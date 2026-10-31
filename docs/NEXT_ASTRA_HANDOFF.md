@@ -1,5 +1,21 @@
 # XGBA Emerald experiment: living Astra handoff
 
+## 2026-10-31: RUNTIME TEST A BLOCKER FIXED IN SOURCE (CLONE LITTLEROOT DUPLICATE PORTAL)
+
+**Actual user gameplay evidence:** A screenshot from the fresh E6 full-world integration build shows cloned Littleroot with the E4/E5 diagnostics and the message **"World 1 could not be saved. The portal will stay closed."** User was trying to return from a clone at the (14,12) scientist. They had already made a disposable E6 save/ROM pair, so their original save remains untouched.
+
+**Confirmed source cause:** Full-story clone event restoration retained the **original World 1 portal object** `LittlerootTown_EventScript_XgbaPortal` at (14,12) while the E2 generator also appended **`Xgba2Littleroot_EventScript_Return` at that exact coordinate**. Interaction with the original portal runs `XgbaE6SpecialLeaveWorldOne`, which correctly refuses cloned groups >= 34. This is a duplicated map event **not evidence that the save snapshot or PC CRC failed**. This is a previously missed adversarial check.
+
+**Source fix:** commit `4b3c5bbd8367aefa3eab96f13963507dded8af44` on `xgba/e6-world-virtualization`:
+- `tools/xgba_generate_e2.py`: filter *only* `LittlerootTown_EventScript_XgbaPortal` from cloned Littleroot, preserving all original vanilla story objects and other events. Retain one cloned return portal at (14,12).
+- `tests/test_xgba_e6_clones.py`: enforce exactly one object at (14,12), verify it is the cloned return portal, verify no original World 1 portal script remains there, compare other 518 map events to their intended original versions.
+- `Makefile: e6`: package into a temporary same-filesystem directory, CRC/ROM-geometry verify, and only then atomically replace the generated `xgba-emerald-e6.gba`. Fixes already encountered FileExistsError from the packer's safe exclusive-create mode without deleting the old verified ROM before the replacement succeeds. **No save-file format/byte change.**
+
+**CI:** https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41199171438 ; `save-format` green, complete ROM build was in progress at this note. Check before providing user rebuild instruction; do not say runtime fix is user accepted until tested.
+
+**Immediate next gameplay test:** Ensure XGBA is fully closed. User should `git pull --ff-only` the E6 game branch, `make e6` (no manual rename), then copy newly built `xgba-emerald-e6.gba` over ONLY the disposable `e6-smoke-existing/xgba-emerald-e6.gba` ROM. Keep `e6-smoke-existing/xgba-emerald-e6.sav` and the original `xgba-emerald-e6.sav` untouched. Launch Qt using the disposable ROM and interact with clone scientist (14,12); expect **"World N reporting in! Back to the lab!"** and arrival in Test Town. Continue old Test A isolation steps only after this passes. Do not require all prior tests again.
+
+
 ## 2026-10-31: E6 FULL-WORLD STORY INTEGRATION IMPLEMENTED IN SOURCE, GAMEPLAY NOT YET ACCEPTED
 
 **User authorization:** implement the agreed final E6 plan, including adversarial/performance design up front, preserving the measured v2 PC performance. **New user acceptance:** the World 3 Page 8 Box 1 Zigzagoon survived a full emulator restart with the optimized v2 game. That closes the v2 cold-restart storage acceptance item; do not ask for the same test again unless this new world-system integration justifies one focused regression.
