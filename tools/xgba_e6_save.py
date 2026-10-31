@@ -32,6 +32,17 @@ MAX_WORLD_DATA = SLOT_SIZE - RECORD_HEADER_SIZE
 MAGIC = b"XGBAE6S\x00"
 RECORD_MAGIC = b"XGBAE6W\x00"
 VERSION = 2
+
+# E6 eight-page PC sidecar (20 worlds × 2 bank copies × 8 native PC pages).
+BOX_START = 0x380000
+BOX_SLOT_SIZE = 0x44000
+BOX_HEADER_SIZE = 36
+BOX_PAGES = 8
+BOX_PAGE_SIZE = 33744
+BOX_DATA_SIZE = BOX_PAGES * BOX_PAGE_SIZE
+BOX_MAGIC = b"XGBAE6B\x00"
+BOX_VERSION = 1
+BOX_HEADER = struct.Struct("<8sHHIIIIII")
 HEADER = struct.Struct("<8sIIII")
 RECORD = struct.Struct("<8sHHIIIII")
 
@@ -149,6 +160,47 @@ def write_world(data, world, payload):
     return bytes(result)
 
 
+def box_slot_offset(world, slot):
+    if not 1 <= world <= WORLD_COUNT or slot not in (0, 1):
+        raise E6SaveError("Invalid E6 PC world or bank slot")
+    off = BOX_START + ((world - 1) * 2 + slot) * BOX_SLOT_SIZE
+    if off + BOX_SLOT_SIZE > BACKUP_HEADER:
+        raise E6SaveError("E6 PC bank overlaps the end-of-save header")
+    return off
+
+
+def read_box_slot(data, world, slot):
+    offset = box_slot_offset(world, slot)
+    record = data[offset:offset + BOX_SLOT_SIZE]
+    if record[:8] == b"\\xFF" * 8:
+        return None
+    if len(record) < BOX_HEADER_SIZE:
+        return None
+    magic, version, stored_world, seq, page, mask, size, crc, header_crc = BOX_HEADER.unpack(
+        record[:BOX_HEADER_SIZE]
+    )
+    if (magic != BOX_MAGIC or version != BOX_VERSION or stored_world != world
+            or seq < 1 or page >= BOX_PAGES or mask > 255 or not (mask & (1 << page))
+            or size != BOX_DATA_SIZE):
+        return None
+    if zlib.crc32(record[:32]) != header_crc:
+        return None
+    payload = record[BOX_HEADER_SIZE:BOX_HEADER_SIZE + size]
+    if zlib.crc32(payload) != crc:
+        return None
+    return seq, page, mask, payload
+
+
+def read_box_bank(data, world):
+    validate(data)
+    values = []
+    for slot in (0, 1):
+        found = read_box_slot(data, world, slot)
+        if found is not None:
+            values.append((found[0], slot, found[1], found[2], found[3]))
+    return max(values, key=lambda item: item[0]) if values else None
+
+
 def atomic_write(output, data):
     output = Path(output)
     if output.exists():
@@ -193,6 +245,12 @@ def main():
         for world in range(1, WORLD_COUNT + 1):
             sequence, slot, payload = read_world(data, world)
             print(f"E6 World {world:2d}: sequence={sequence}, slot={slot}, size={len(payload)}")
+        for world in range(1, WORLD_COUNT + 1):
+            box = read_box_bank(data, world)
+            if box:
+                seq, slot, page, mask, payload = box
+                print(f"E6 PC World {world:2d}: page={page + 1}/8, "
+                      f"pages_initialized={mask.bit_count()}, seq={seq}, slot={slot}")
         legacy = bytearray(data[:E5_SIZE])
         legacy[PRIMARY_HEADER:PRIMARY_HEADER + HEADER_SIZE] = e5.build_superblock()
         for world in range(1, WORLD_COUNT + 1):
