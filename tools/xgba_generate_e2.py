@@ -104,9 +104,18 @@ def main():
         clone.pop("shared_events_map", None)
         clone.pop("shared_scripts_map", None)
         clone["shared_scripts_map"] = "Xgba2Neutral"
-        clone["object_events"] = []
+
+        # E6: bring real map inhabitants back. Keep automatic story-trigger
+        # coordinates neutral until all world-to-world script warps are routed.
+        clone["object_events"] = copy.deepcopy(original.get("object_events", []))
         clone["coord_events"] = []
-        clone["bg_events"] = []
+        clone["bg_events"] = copy.deepcopy(original.get("bg_events", []))
+
+        # Littleroot hosts our lab portal and E4/E6 diagnostics, and its
+        # original events would collide with those intentionally placed NPCs.
+        if name == "LittlerootTown":
+            clone["object_events"] = []
+            clone["bg_events"] = []
 
         for warp in clone.get("warp_events", []):
             dest = warp["dest_map"]
