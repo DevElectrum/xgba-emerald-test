@@ -1,5 +1,12 @@
 # XGBA Emerald experiment: living Astra handoff
 
+## 2026-10-31: USER-REPORTED OPTIMIZED E6 GAMEPLAY LATENCY (1x SPEED)
+
+**New actual gameplay result, after the E6 v2 page-store migration and build:** the user reports **PC page switching around 1 second at normal 1× emulator speed**, and **world switching around 1.5–2 seconds at normal 1× emulator speed**. Before the optimization they measured **6–7 seconds per PC page change at 5×** and **3–4 seconds per world change at 5×**. These are not speed-normalized benchmarks, so never claim a verified exact multiplicative speedup or that the target at 5× was measured. Nevertheless, the worst visible stall is dramatically reduced; the user/assistant consider performance suitable to move forward, not worthy of another speculative optimization round. **No code change in response to these timing measurements.**
+
+**Acceptance scope:** This update establishes practical **runtime page/world transition timing** under the optimized game. It does **NOT**, by itself, confirm the previously requested full-restart preservation of the v2 Page 8 Box 1 Zigzagoon, the full migration integrity in the user's actual save, or all inventory/page/world state after restart. Earlier pre-optimization E6 v1 in-session tests confirmed the Zigzagoon survived changing pages and World 3 Poké Balls survived world changes. Keep those old tests distinct from optimized v2 validation. Continue the user-requested single focused persistence check if necessary; avoid re-running accepted tests gratuitously.
+
+
 ## 2026-10-31: E6 OPTIMIZED PC V2 IMPLEMENTATION, BUILD/CI IN PROGRESS
 
 User explicitly authorized implementation after adversarial review. This is an **experimental save-format transition**, not user-gameplay accepted. User's existing E6 `.sav` on Nyx has NOT been accessed, migrated, overwritten or modified. Do not give a ROM-only update command: **the new game deliberately refuses legacy (v1) PC sidecar banks until a verified OFFLINE save conversion has been run**.
