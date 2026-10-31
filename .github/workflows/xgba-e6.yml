@@ -25,14 +25,20 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      - name: Check out agbcc toolchain
+        uses: actions/checkout@v4
+        with:
+          repository: pret/agbcc
+          path: agbcc
       - name: Install Emerald toolchain dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential make gcc-arm-none-eabi binutils-arm-none-eabi python3
-      - name: Build agbcc
+          sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi libpng-dev
+      - name: Install agbcc
+        working-directory: agbcc
         run: |
-          git submodule update --init --recursive
-          make -C tools/agbcc
+          ./build.sh
+          ./install.sh ../
       - name: Build opt-in E6 ROM
         run: make e6
       - name: Verify E6 cartridge marker and exact size
