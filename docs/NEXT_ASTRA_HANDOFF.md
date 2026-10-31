@@ -1,5 +1,7 @@
 # XGBA Emerald experiment: living Astra handoff
 
+- **2026-10-31 E5 integration gate update:** E5 game native build succeeded: https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41172674059 . E5 64 MiB ROM, header/checksum validation and host-format tests succeeded: https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41172674073 . E5 emulator CTest persistence success: https://github.com/DevElectrum/xgba/actions/runs/41172551382 . All are code/format proof, not in-game acceptance. Next action: build emulator + E5 ROM locally, use host `init` to convert a COPY of the E4 save, verify NPCs at World 20/3 (20,12 writer; 22,12 auditor), save/close/reopen, and check `xgba_e5_save.py inspect`. Protect originals.
+
 ## 2026-10-31: E5 game-side runtime integration started
 
 - Active `xgba/e5-expanded-save` now contains `include/xgba_e5.h` and `src/xgba_e5.c`: strict cart+superblock probe, bytewise `0x0F` read/write, 20-world dual-slot format compatible with `tools/xgba_e5_save.py`, header/payload CRC32 validation, newest-valid-copy selection, and inactive-slot writes with magic last.
