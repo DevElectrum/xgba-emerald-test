@@ -282,7 +282,7 @@ bool8 XgbaE6RestoreWorld(u8 world)
     gSaveBlock1Ptr->vars[VAR_XGBA_WORLD_ID - VARS_START] = chosenWorld;
     LoadPlayerParty();
     LoadPlayerBag();
-    return TRUE;
+    return XgbaE6BoxesEnterWorld(world);
 }
 
 static bool8 XgbaE6PrepareCurrentState(void)
@@ -329,6 +329,8 @@ void XgbaE6SpecialEnterWorld(void)
             return;
         if (!XgbaE6PrepareCurrentState() || !XgbaE6SnapshotWorld(world))
             return;
+        if (!XgbaE6BoxesEnterWorld(world))
+            return;
     }
     else if (status < 0 || !XgbaE6RestoreWorld(world))
     {
@@ -347,7 +349,9 @@ void XgbaE6SpecialLeaveWorld(void)
         gSpecialVar_Result = 0;
         return;
     }
-    if (world >= 2 && world <= 20 && XgbaE6SnapshotWorld(world))
+    if (world >= 2 && world <= 20
+        && XgbaE6BoxesCheckpoint(world)
+        && XgbaE6SnapshotWorld(world))
         gSpecialVar_Result = 1;
 }
 
@@ -363,7 +367,13 @@ void XgbaE6CheckpointOnSave(void)
         && gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_XGBA_TEST_TOWN))
         return;
 
-    XgbaE6SnapshotWorld(world);
+    if (XgbaE6BoxesCheckpoint(world))
+        XgbaE6SnapshotWorld(world);
+}
+
+u8 XgbaE6GetSelectedWorld(void)
+{
+    return XgbaE6CurrentWorld();
 }
 
 s32 XgbaE6AuditWorld(u8 world)
