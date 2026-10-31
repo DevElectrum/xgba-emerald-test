@@ -1,6 +1,8 @@
 # XGBA E6: rapid full-world virtualization plan
 
 ## 2026-10-31 E6 playability acceleration (implemented, runtime unverified)
+**CI UPDATE: PASS.** The latest NPC restoration source commit `f09e785c` passed both Emerald native ROM build and E6 save-format jobs on [run 41183201138](https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41183201138). E6 is READY FOR THE FIRST USER INTEGRATION SMOKE TEST, but no user runtime results yet. All subsequent commits currently only changed docs/agents. Existing E5 save and ROM remain untouched.
+
 
 Commit `f09e785c` on E6 game branch changed `tools/xgba_generate_e2.py` to **restore ordinary object NPCs, trainers and BG interactions** from original Hoenn into cloned maps, except Littleroot which retains accessible lab/E4/E6 diagnostic NPCs. Automatic coordinate events and map callbacks remain neutral, as original story script warp destinations have not been fully audited/remapped. Some maps using `shared_events_map` may still have missing NPCs because shared event references are not yet resolved. This is *not* yet 20 complete story campaigns. ROM CI for this NPC change: https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41183201138 (pending at checkpoint). Earlier **full E6 C world-switch code** successfully built in https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41183020017. No E6 user gameplay acceptance yet.
 
