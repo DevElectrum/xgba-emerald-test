@@ -53,10 +53,10 @@ jobs:
           assert rom.stat().st_size == 0x10000000
           with rom.open("rb") as f:
               f.seek(0xB5)
-              assert f.read(8) == b"XGBA256\\xE6"
+              assert f.read(8) == b"XGBA256\xE6"
               f.seek(-16, 2)
               assert f.read(8) == b"XGBAE7!!"
               f.seek(-1, 2)
-              assert f.read(1) != b"\\x00"
+              assert f.read(1) != b"\x00"
           print("E7 256 MiB tagged and final-byte asset validated")
           PY
