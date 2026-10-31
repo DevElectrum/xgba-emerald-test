@@ -34,7 +34,7 @@ class OptimizedBoxTests(unittest.TestCase):
         data = bytearray(e6.initialize(bytes([27]) * e6.NATIVE_SIZE + b"r" * 16))
         page1 = sample_page(3)
         page8 = bytearray(sample_page(7))
-        page8[12:20] = b"ZIGZAGOON"
+        page8[12:21] = b"ZIGZAGOON"
         page8 = bytes(page8)
         legacy_record(data, 3, 0, 12, 7, 129, {0: page1, 7: page8})
         legacy_record(data, 3, 1, 13, 7, 129, {0: page1, 7: page8})
