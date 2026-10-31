@@ -10,5 +10,10 @@ void XgbaE6SpecialAudit(void);
 void XgbaE6SpecialEnterWorld(void);
 void XgbaE6SpecialLeaveWorld(void);
 void XgbaE6CheckpointOnSave(void);
+bool8 XgbaE6BoxesEnterWorld(u8 world);
+bool8 XgbaE6BoxesCheckpoint(u8 world);
+bool8 XgbaE6BoxesSwitchPage(u8 world, u8 page);
+u8 XgbaE6BoxesGetPage(u8 world);
+u8 XgbaE6GetSelectedWorld(void);
 
 #endif
