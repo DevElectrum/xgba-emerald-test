@@ -1,5 +1,13 @@
 # XGBA Emerald experiment: living Astra handoff
 
+## 2026-10-31: E5 game-side runtime integration started
+
+- Active `xgba/e5-expanded-save` now contains `include/xgba_e5.h` and `src/xgba_e5.c`: strict cart+superblock probe, bytewise `0x0F` read/write, 20-world dual-slot format compatible with `tools/xgba_e5_save.py`, header/payload CRC32 validation, newest-valid-copy selection, and inactive-slot writes with magic last.
+- E5 snapshot/audit specials are appended to `data/specials.inc`; event scripts live in `data/maps/XgbaTestTown/scripts.inc`; `tools/xgba_generate_e2.py` generates new NPCs at cloned Littleroot (20,12) writer and (22,12) auditor. They snapshot/check the existing 16-byte E4 world-event prototype, **not** complete world progression or PC boxes.
+- The first native agbcc link job found that libc `memcmp` is unavailable in this build. Fixed in `83c63f99ffd750c9825e8b845e3d4d2274065d0c` with explicit byte comparison. The latest ROM build/check must pass before asking the user to test; earlier green host-format-only Python jobs do not verify the new game C code.
+- Emulator E5 unit test is green: https://github.com/DevElectrum/xgba/actions/runs/41172551382, including save-file unload/reload persistence, redundant superblock recovery, and fail-closed behavior.
+- Preserve accepted E4 save/ROM, create E5 **copies** with `tools/xgba_e5_save.py init`, and keep all changes on E5 branches. Details and proposed gameplay acceptance procedure in `docs/XGBA_E5_README.md`. Nothing merged to master or Grand Anthology.
+
 Updated: 2026-10-30
 Status: E1/E2/E3 accepted, E4 **fully accepted in real gameplay with independent World 3 and World 20 records surviving save/restart**. E5 experimental storage expansion STARTED on `xgba/e5-expanded-save` (game) and `xgba/e5-save-expansion` (emulator). Offline 1 MiB save format / CRC fallback tests and emulator baseline CI pass; E5 game runtime snapshot I/O and user testing NOT done.
 
