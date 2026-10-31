@@ -1,5 +1,12 @@
 # XGBA Emerald experiment: living Astra handoff
 
+## 2026-10-31: E7 GAMEPLAY ACCEPTED, CLOSE E7 AND RETURN TO GRAND ANTHOLOGY
+
+User provided an actual in-game screenshot showing Test Town witness saying **"E7: 256 MiB ROM address test! ALL 5 remote windows PASS!"** The user also explicitly confirmed **"World 20 renders fine."** These were precisely the two agreed, final E7 gameplay acceptance tests. Both PASS. Game CI: https://github.com/DevElectrum/xgba-emerald-test/actions/runs/41242174037 and emulator CPU CI: https://github.com/DevElectrum/xgba/actions/runs/41242131166 both PASS. E7 is **implemented, CI-verified and user-runtime-accepted** as an experimental full-256-MiB ROM address capacity proof. No additional tests, performance waves or E6 regressions should be requested without a specific observed defect. All E6 saves/PC/world assets and emulator 16 MiB save format remain unchanged.
+
+Now freeze E7 in both repositories as accepted baselines, preserve original 16 MiB saves and rollback branches, and **switch the engineering focus to DevElectrum/grand-anthology only when the user authorizes a specific integration**. The XGBA technical experiment has fulfilled its stated goal. This does not mean stock emulators support 256 MiB, nor that 256 MiB of unique gameplay content has been authored. E7 branch source: xgba/e7-256mib, dedicated accepted branch xgba/e7-accepted-20261031.
+
+
 ## E7 256 MiB MEGASCALE IMPLEMENTATION (2026-10-31)
 User expressly authorized E7 implementation and wants big steps, very limited QA. New game branch xgba/e7-256mib (from frozen xgba/e6-audited-baseline-20261031); emulator branch xgba/e7-256mib (from e6-large-save). E6 branches/source, Grand Anthology, original saves untouched.
 
