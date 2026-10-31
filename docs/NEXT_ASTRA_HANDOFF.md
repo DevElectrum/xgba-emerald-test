@@ -1,5 +1,14 @@
 # XGBA Emerald experiment: living Astra handoff
 
+## 2026-10-31: USER ACCEPTED WORLD 2 EARLY STORY THROUGH BIRCH LAB STARTER
+
+**Actual new gameplay acceptance:** User reported **"Yup. World 2 progressed to first battle and getting starter from birch in lab. Sequence went perfectly."** This supersedes prior uncertainty about the cloned moving-truck introduction and Birch event sequence. In a fresh, separate E6 16 MiB test save, **World 2 moving truck → Littleroot family/rival intro → Route 101 Birch Zigzagoon rescue → initial battle → receiving starter at Birch's lab** worked correctly in user gameplay. The cloned map coordinate triggers, NPC/event callbacks and early script warps are now confirmed to function along this specific progression path.
+
+**Boundaries:** This does not by itself validate all other story checkpoints/gyms, World 20 fresh initiation, World 1 isolation in the new build, cross-world first-starter independence, cold-restart durability of World 2, or special Fly/Dive/whiteout travel. Prior optimized v2 populated Worlds 3 and 20 party/bag/PC Zigzagoon and the cloned Littleroot portal have separately passed user checks. Do not request another repeat of World 2's intro.
+
+**Next minimal gameplay acceptance:** In disposable fresh save, use the cloned Littleroot portal to return to hub, optionally verify World 2 retained its new starter after an independent-world visit; check a fresh World 20 starts at truck rather than inheriting World 2's starter. Favor focused checks and automated progression audits over 20 playthroughs. Keep E6 experimental status and preserve all source/user save backups.
+
+
 ## 2026-10-31: FRESH WORLD 2 TRUCK INTRO ACCEPTED IN GAMEPLAY
 
 **User report from disposable `e6-smoke-fresh/` save:** **"Yup. World 2 truck scene."** Test B1 is now user-confirmed: a newly initialized E6 game can capture its pristine campaign template and enter World 2 at the cloned moving-truck introduction. This is positive runtime evidence of independent **initialization entry** only, not yet that the truck-to-house sequence, Birch rescue, independent starter or entire story succeeds.
