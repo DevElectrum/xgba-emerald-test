@@ -1,0 +1,52 @@
+name: XGBA E6 16 MiB save migration and ROM build
+
+on:
+  push:
+    branches:
+      - xgba/e6-world-virtualization
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  save-format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python E6 migration and redundancy tests
+        run: python3 -m unittest discover -s tests -p 'test_xgba_e6_save.py' -v
+      - name: Check Python syntax
+        run: python3 -m py_compile tools/xgba_e6_save.py tools/xgba_pack_e3.py tests/test_xgba_e6_save.py
+
+  emerald-rom:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Emerald toolchain dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential make gcc-arm-none-eabi binutils-arm-none-eabi python3
+      - name: Build agbcc
+        run: |
+          git submodule update --init --recursive
+          make -C tools/agbcc
+      - name: Build opt-in E6 ROM
+        run: make e6
+      - name: Verify E6 cartridge marker and exact size
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          rom = Path("xgba-emerald-e6.gba")
+          with rom.open("rb") as f:
+              f.seek(0xB5)
+              assert f.read(7) == b"XGBA256"
+              assert f.read(1) == b"\xE6"
+              f.seek(0xA0)
+              prefix = f.read(0x1E)
+              assert (sum(prefix[:0x1D]) + prefix[0x1D] + 0x19) & 0xFF == 0
+          assert rom.stat().st_size == 64 * 1024 * 1024
+          print("E6 tagged 64 MiB Emerald ROM verified")
+          PY
