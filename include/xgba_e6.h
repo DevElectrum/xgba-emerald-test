@@ -10,6 +10,8 @@ void XgbaE6SpecialAudit(void);
 void XgbaE6SpecialEnterWorld(void);
 void XgbaE6SpecialLeaveWorld(void);
 void XgbaE6CheckpointOnSave(void);
+extern const u32 gXgbaE6CrcTable[256];
+bool8 XgbaE6BoxesCanEnterWorld(u8 world);
 bool8 XgbaE6BoxesEnterWorld(u8 world);
 bool8 XgbaE6BoxesCheckpoint(u8 world);
 bool8 XgbaE6BoxesSwitchPage(u8 world, u8 page);
