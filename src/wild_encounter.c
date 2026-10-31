@@ -47,6 +47,7 @@ enum {
 
 #define HEADER_NONE 0xFFFF
 
+static s16 XgbaCanonicalEncounterGroup(s16 group);
 static u16 FeebasRandom(void);
 static void FeebasSeedRng(u16 seed);
 static bool8 IsWildLevelAllowedByRepel(u8 level);
