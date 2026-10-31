@@ -1,5 +1,20 @@
 # XGBA E6: rapid full-world virtualization plan
 
+## Active implementation checkpoint (2026-10-31)
+
+**E6 development HAS STARTED.** Feature branches are real: emulator `xgba/e6-large-save` and game `xgba/e6-world-virtualization`. This section supersedes the older "no E6 code started" status below; retain the original design narrative for historical context.
+
+- **Emulator written and CI green:** 16 MiB opt-in revision E6 with complete v2 `XGBAE6S\0` superblocks (primary 0x20000, backup 0xFFF000), CRC32, and byte-addressed persistent 0x0F extension spanning save-file offsets 0x20000..0xFFFFFF. Native 128 KiB Flash1M remains unchanged. E5 1 MiB mapping remains independent. Changes to `memory.h`, `savedata.h`, `savedata.c`, `memory.c` and core tests. Emulator CI **success**: https://github.com/DevElectrum/xgba/actions/runs/41182582688.
+- **Game ROM build:** `make e6` marks 64 MiB ROM revision 0xE6 and recalculates header checksum, without changing `make e5`. `tools/xgba_pack_e3.py` supports `--e6-save`. E6 save-format Python checks passed; game runtime compilation CI ongoing at time of this checkpoint.
+- **E6 migration tool:** `tools/xgba_e6_save.py init OLD_E5.sav NEW_E6.sav` or from a 128 KiB native file. It refuses overwrite, retains native original byte-for-byte, old E5 world records at their original offsets and the E5 backup superblock, moves optional RTC trailer to 16 MiB end, writes duplicated E6 v2 headers. 20 E6 worlds × two **64 KiB slots**, starting at file offset 0x100000; max E6 payload 65,504 B. Host CRC and fallback tests pass in `tests/test_xgba_e6_save.py`.
+- **Guest runtime state bank:** `src/xgba_e6.c` and `include/xgba_e6.h` implement byte-streamed snapshots of `SaveBlock1` (15,752 B), `SaveBlock2` (3,884 B), and current native `PokemonStorage` (33,744 B), combined 53,380 B per E6 world record, with v2 record header and CRC32. This does **not** yet add >14 PC boxes. Snapshot avoids allocating another large EWRAM block. E6 audit verifies persisted record integrity, not equality with current live RAM after intervening saves.
+- **World transition experiment:** `XgbaE6SpecialLeaveWorld` checkpoints active World 2–20 before returning to XGBA Test Town, and `XgbaE6SpecialEnterWorld` restores a valid target record before the portal warp. On a fresh world it first creates/restores a baseline World 1 snapshot. Navigation bytes 0x000..0x233 of SaveBlock1 remain untouched during restore; current selected world ID is preserved; `LoadPlayerParty` and `LoadPlayerBag` are invoked after restore. Normal in-world `SAVE_NORMAL` also checkpoints E6. Edits are in `data/maps/XgbaTestTown/scripts.inc`, `data/specials.inc`, and `src/save.c`. **Unverified in running game; could be buggy.**
+- **Preservation:** accepted E5 branches/saves untouched; `master` and `DevElectrum/grand-anthology` untouched. E6 is separately tagged and requires separately named `.sav` generated from an E5 copy. No E6 gameplay tests have been requested or passed yet.
+- **Outstanding heavy goals:** restore story NPCs/events to cloned Hoenn, support >14 boxes in streamed PC storage, achieve 20 playable worlds, migrate/repair edge-case state, check normal save/exit/warp behavior. The user wants fast iteration and focused smoke tests, not a production QA matrix.
+
+**Suggested minimal user smoke test only after game CI builds:** build emulator and E6 ROM on respective new branches; make an untouched E6 save from E5 via the copy-only migration tool; launch Qt XGBA. Switch World 20 → World 3 → World 20, checking party/items/flags; save, close and reopen, repeat. Never overwrite `xgba-emerald-e5.sav`. Use the user's 3-command presentation preference.
+
+
 **Status (2026-10-31): DESIGN APPROVED IN CONVERSATION; NO E6 IMPLEMENTATION HAS STARTED.** Do not mistake proposed scope for working code. This is a personal passion project. The user explicitly prefers ambitious steps, rapid iteration and tolerable setbacks over exhaustive QA. Motto: **Regieleki, speed is god**. Preserve rollback copies and run focused smoke tests, but do not slow development with production-grade test matrices.
 
 ## Where we are
