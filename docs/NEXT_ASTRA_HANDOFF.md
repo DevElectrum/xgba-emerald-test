@@ -1,5 +1,15 @@
 # XGBA Emerald experiment: living Astra handoff
 
+## E7 256 MiB MEGASCALE IMPLEMENTATION (2026-10-31)
+User expressly authorized E7 implementation and wants big steps, very limited QA. New game branch xgba/e7-256mib (from frozen xgba/e6-audited-baseline-20261031); emulator branch xgba/e7-256mib (from e6-large-save). E6 branches/source, Grand Anthology, original saves untouched.
+
+Game: tools/xgba_pack_e7.py builds an exact 256 MiB ROM with actual 441-layout map geometry for Worlds 3/6/10/14/20 relocated to offsets 0x04000000, 0x08000000, 0x0C000000, 0x0E000000, 0x0FF00000. The other worlds retain their E6 geometry. Sparse host output with asset-by-asset byte verification, overlap/bounds detection, atomic replacement after verified staging. include/xgba_e7_data.h shares exact addresses with src/overworld.c, which loads REAL tiles from the distant regions. Five 16-byte offset+CRC probe records end at 0x040FFFFF, 0x080FFFFF, 0x0C0FFFFF, 0x0E0FFFFF, 0x0FFFFFFF. In Test Town the witness at (3,12) invokes src/xgba_e7.c, which performs 80 volatile 8-bit emulator CPU reads from 0x10xxxxxx..0x1FFFFFFF and reports PASS/FAIL.
+
+ROM keeps XGBA256 and save revision 0xE6. E7 uses the already accepted E6 16 MiB save bytes; no new migration, PC code, party state or emulator savedata changes. Source src/gba/test/core.c in emulator branch exercises 8/16/32-bit CPU/View reads at 64/128/192/224/255 MiB and the actual final byte. E7 emulator CI https://github.com/DevElectrum/xgba/actions/runs/41242131166 has completed SUCCESS. Game E7 CI https://github.com/DevElectrum/xgba-emerald-test/actions/workflows/xgba-e7.yml has address-plan and E6 save-format tests green; newest full 256 MiB ROM CI status must be checked before inviting gameplay.
+
+Engineering/performance: no 256 MiB Python allocation or GBA runtime scan; runtime base lookup O(1); marker check only on one NPC interaction (80 byte reads). The existing emulator maps 256 MiB and computes its once-at-start ROM CRC, so cold open may take more time but E6 page/world hot paths unchanged. Bounds/overlap, header, final marker and all actual geometry are checked by CI. One user smoke test ONLY after full CI green: use disposable same-stem E7 .sav copied from existing test save, enter Test Town to inspect witness PASS, then enter World 20 (map geometry near 255 MiB) and confirm render/acceptable performance. No 20 story playthroughs, no repeat E6 test wave. Return to Grand Anthology when complete.
+
+
 ## 2026-10-31: FINAL AUTOMATED E6 MAP/STORY AUDIT, NO MORE ROUTINE USER RETESTS
 
 **User instruction:** E6 is taking too long; proceed with remaining engineering checks and then move forward. Do not require more 20-world playthroughs, moving trucks, Birch or previously accepted v2 PC tests. Existing user-proven gameplay: World 2 full intro/Birch rescue/starter lab, fresh World 20 truck, existing World 3/20 parties/inventories/PC Zigzagoon, working cloned portal, plus previous optimized PC cold restart/performance.
