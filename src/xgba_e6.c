@@ -52,17 +52,7 @@ static void XgbaE6Write32(u8 *ptr, u32 value)
 
 static u32 XgbaE6CrcStep(u32 crc, u8 value)
 {
-    u32 i;
-
-    crc ^= value;
-    for (i = 0; i < 8; i++)
-    {
-        if (crc & 1)
-            crc = (crc >> 1) ^ 0xEDB88320;
-        else
-            crc >>= 1;
-    }
-    return crc;
+    return gXgbaE6CrcTable[(crc ^ value) & 0xFF] ^ (crc >> 8);
 }
 
 static u32 XgbaE6Crc(const volatile u8 *src, u32 count)
@@ -134,12 +124,13 @@ static s32 XgbaE6InspectSlot(u8 world, u8 slot, u32 *sequence, u32 *length)
     const volatile u8 *record = XgbaE6Slot(world, slot);
     u32 i;
 
-    for (i = 0; i < XGBA_E6_SLOT_SIZE; i++)
+    // Erased magic marks an unused/uncommitted slot. No 64 KiB scan.
+    for (i = 0; i < sizeof(sXgbaE6RecordMagic); i++)
     {
         if (record[i] != 0xFF)
             break;
     }
-    if (i == XGBA_E6_SLOT_SIZE)
+    if (i == sizeof(sXgbaE6RecordMagic))
         return 0;
 
     for (i = 0; i < sizeof(sXgbaE6RecordMagic); i++)
@@ -216,26 +207,28 @@ bool8 XgbaE6SnapshotWorld(u8 world)
     record = XgbaE6Slot(world, status == 1 ? 1 - slot : 0);
     length = XgbaE6SnapshotSize();
 
-    for (i = 0; i < 32; i++)
-        record[i] = 0xFF;
-
+    // If the live save hasn't changed, avoid another 53 KiB extension write.
     crc = 0xFFFFFFFF;
     for (i = 0; i < length; i++)
-    {
-        u8 value = XgbaE6SnapshotByte(i);
-        record[32 + i] = value;
-        crc = XgbaE6CrcStep(crc, value);
-    }
-    for (; i < XGBA_E6_PAYLOAD_CAPACITY; i++)
-        record[32 + i] = 0xFF;
+        crc = XgbaE6CrcStep(crc, XgbaE6SnapshotByte(i));
+    crc ^= 0xFFFFFFFF;
+    if (status == 1 && oldLength == length
+        && XgbaE6Read32(XgbaE6Slot(world, slot) + 20) == crc)
+        return TRUE;
 
+    for (i = 0; i < 32; i++)
+        record[i] = 0xFF;
+    for (i = 0; i < length; i++)
+        record[32 + i] = XgbaE6SnapshotByte(i);
+
+    // The remaining 64 KiB slot padding is outside the declared payload.
     memset(header, 0, sizeof(header));
     memcpy(header, sXgbaE6RecordMagic, sizeof(sXgbaE6RecordMagic));
     XgbaE6Write16(header + 8, 2);
     XgbaE6Write16(header + 10, world);
     XgbaE6Write32(header + 12, sequence + 1);
     XgbaE6Write32(header + 16, length);
-    XgbaE6Write32(header + 20, crc ^ 0xFFFFFFFF);
+    XgbaE6Write32(header + 20, crc);
     XgbaE6Write32(header + 24, XgbaE6Crc(header, 24));
 
     for (i = 8; i < sizeof(header); i++)
@@ -312,6 +305,9 @@ void XgbaE6SpecialEnterWorld(void)
     if (world < 2 || world > 20)
         return;
 
+    // Reject a missing/legacy/corrupt destination PC before mutating live data.
+    if (!XgbaE6BoxesCanEnterWorld(world))
+        return;
     status = XgbaE6AuditWorld(world);
     if (status == 0)
     {
